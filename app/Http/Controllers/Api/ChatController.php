@@ -77,12 +77,20 @@ class ChatController extends Controller
             $userPrompt = "CONTEXT:\n{$contextText}\n\nUSER QUESTION:\n{$question}";
 
             $baseUrl = rtrim((string) config('services.gemini.base_url'), '/');
-            $chatModel = (string) config('services.gemini.chat_model', 'gemini-2.5-flash');
+            $primaryModel = (string) config('services.gemini.chat_model', 'gemini-3.7-flash');
             $key = (string) config('services.gemini.key');
 
-            $url = "{$baseUrl}/models/{$chatModel}:generateContent?key={$key}";
+            // Try primary model first; fall back automatically if Google reports 503 high demand
+            $candidateModels = array_values(array_unique([
+                $primaryModel,
+                'gemini-3.7-flash',
+                'gemini-3.6-flash',
+                'gemini-3.5-flash',
+                'gemini-3.5-flash-lite',
+                'gemini-3.8-flash',
+            ]));
 
-            $response = Http::timeout(30)->post($url, [
+            $payload = [
                 'system_instruction' => [
                     'parts' => [
                         ['text' => $systemInstruction],
@@ -99,11 +107,33 @@ class ChatController extends Controller
                 'generationConfig' => [
                     'temperature' => 0.2,
                 ],
-            ]);
+            ];
 
-            if (!$response->successful()) {
+            $response = null;
+            $lastErrorBody = '';
+            $lastStatus = 500;
+
+            foreach ($candidateModels as $model) {
+                $url = "{$baseUrl}/models/{$model}:generateContent?key={$key}";
+                $res = Http::timeout(25)->post($url, $payload);
+
+                if ($res->successful()) {
+                    $response = $res;
+                    break;
+                }
+
+                $lastStatus = $res->status();
+                $lastErrorBody = $res->body();
+
+                // Retry next model on 503 (overloaded), 429 (rate limit), or 404 (unavailable)
+                if (!in_array($lastStatus, [404, 429, 503], true)) {
+                    break;
+                }
+            }
+
+            if (!$response || !$response->successful()) {
                 throw new \RuntimeException(
-                    "Gemini generateContent failed with HTTP {$response->status()}: {$response->body()}"
+                    "Gemini generateContent failed with HTTP {$lastStatus}: {$lastErrorBody}"
                 );
             }
 
