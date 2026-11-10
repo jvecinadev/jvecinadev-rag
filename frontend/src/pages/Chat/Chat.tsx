@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { api } from '../../api';
 import type {
-  ChatFeedbackRequest,
-  ChatFeedbackResponse,
-  ChatRequest,
-  ChatResponse,
+    ChatFeedbackRequest,
+    ChatFeedbackResponse,
+    ChatRequest,
+    ChatResponse,
 } from '../../types/api';
 import { usePageTitle } from '../../lib/usePageTitle';
 import { SectionLabel } from '../../components/SectionLabel';
@@ -41,10 +42,14 @@ function extractErrorMessage(err: unknown): string {
 export default function Chat() {
   usePageTitle('Ask');
 
+  const location = useLocation();
+
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [inputValue, setInputValue] = useState<string>('');
   const [isSending, setIsSending] = useState<boolean>(false);
 
+  const hasAutoSentRef = useRef<boolean>(false);
+  const isSendingRef = useRef<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const activeTurnIdRef = useRef<string | null>(null);
   const bottomAnchorRef = useRef<HTMLDivElement | null>(null);
@@ -59,7 +64,7 @@ export default function Chat() {
     }
   }, [turns, scrollToBottom]);
 
-  // Cleanup any in-flight request on unmount
+  // Cleanup any in-flight request when leaving the route
   useEffect(() => {
     return () => {
       abortControllerRef.current?.abort();
@@ -69,16 +74,18 @@ export default function Chat() {
   const executeQuestion = useCallback(
     async (questionText: string, existingTurnId?: string) => {
       const trimmed = questionText.trim();
-      if (trimmed.length < 2 || trimmed.length > 1000 || isSending) {
+      if (trimmed.length < 2 || trimmed.length > 1000 || isSendingRef.current) {
         return;
       }
 
       const turnId =
-        existingTurnId ?? `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        existingTurnId ??
+        `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
       const controller = new AbortController();
       abortControllerRef.current = controller;
       activeTurnIdRef.current = turnId;
+      isSendingRef.current = true;
       setIsSending(true);
 
       if (existingTurnId) {
@@ -139,12 +146,50 @@ export default function Chat() {
         if (activeTurnIdRef.current === turnId) {
           abortControllerRef.current = null;
           activeTurnIdRef.current = null;
+          isSendingRef.current = false;
           setIsSending(false);
         }
       }
     },
-    [isSending]
+    []
   );
+
+  // Pre-seed & auto-send ?q=<text> once on mount, guarded by useRef + history.replaceState
+  useEffect(() => {
+    if (hasAutoSentRef.current) {
+      return;
+    }
+
+    const searchParams = new URLSearchParams(
+      location.search || window.location.search
+    );
+    const rawQuery = searchParams.get('q');
+    if (rawQuery === null) {
+      return;
+    }
+
+    const trimmedQuery = rawQuery.trim();
+
+    const timerId = window.setTimeout(() => {
+      if (hasAutoSentRef.current) {
+        return;
+      }
+      hasAutoSentRef.current = true;
+
+      // Drop the ?q= query param from the address bar so refresh doesn't resend
+      window.history.replaceState({}, '', window.location.pathname);
+
+      if (trimmedQuery.length >= 2 && trimmedQuery.length <= 1000) {
+        void executeQuestion(trimmedQuery);
+      } else if (trimmedQuery.length > 0) {
+        setInputValue(trimmedQuery.slice(0, 1000));
+      }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [location.search, executeQuestion]);
 
   const handleSendFromInput = useCallback(() => {
     const question = inputValue.trim();
