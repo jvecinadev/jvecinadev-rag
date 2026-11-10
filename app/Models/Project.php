@@ -48,12 +48,12 @@ class Project extends Model
 
     public function getGithubUrlAttribute(): ?string
     {
-        return $this->github_url;
+        return $this->attributes['github_url'] ?? null;
     }
 
     public function getLiveUrlAttribute(): ?string
     {
-        return $this->live_url;
+        return $this->attributes['live_url'] ?? null;
     }
 
     public function chunks(): MorphMany
