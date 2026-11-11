@@ -24,12 +24,11 @@ class ChatController extends Controller
         $startTime = microtime(true);
 
         try {
-            $chunks = $retrievalService->search($question, 5);
+            $chunks = $retrievalService->search($question, 8);
 
-            // Hard guardrail: if 0 chunks pass the >0.5 similarity floor, skip the LLM entirely
             if (empty($chunks)) {
                 $latencyMs = (int) round((microtime(true) - $startTime) * 1000);
-                $cannedAnswer = "I don't have that information in my portfolio. I can answer questions about John Francis Vecina's projects (Plinth, Bantay PH, Alaala Collections, and Vouch), his full-stack MERN + TypeScript and Laravel + PostgreSQL/pgvector skills, or his engineering approach to RBAC, auth, and testing.";
+                $cannedAnswer = "I don't have that information in my portfolio. I can answer questions about John Francis Vecina's projects (Plinth, Bantay PH, Alaala Collections, Vouch, and jvecina.dev), his full-stack MERN + TypeScript and Laravel + PostgreSQL/pgvector skills, or his engineering approach to RBAC, auth, and testing.";
 
                 $ragLog = RagLog::create([
                     'question' => $question,
@@ -49,7 +48,6 @@ class ChatController extends Controller
                 ]);
             }
 
-            // Build numbered context blocks and matching sources array
             $contextBlocks = [];
             $sources = [];
             $chunkIds = [];
@@ -68,17 +66,23 @@ class ChatController extends Controller
                 ];
             }
 
-            $contextText = implode("\n\n---\n\n", $contextBlocks);
+            $contextText = implode("\n\n===\n\n", $contextBlocks);
 
-            $systemInstruction = "You are the AI portfolio agent for John Francis Vecina (jvecina.dev), a Full-Stack & AI Engineer in Manila, Philippines. "
-                . "Answer ONLY from the context below. "
-                . "If the context does not contain the answer, say you don't have that information and suggest what you do cover. "
-                . "Cite sources inline as [1], [2] matching the context numbers. "
-                . "Keep your tone concise, technical, and direct.";
+            $systemInstruction = <<<'PROMPT'
+You are the AI portfolio agent for John Francis Vecina (jvecina.dev / jvecinadev), a Full-Stack & AI Engineer based in Manila, Philippines.
 
-            $userPrompt = "CONTEXT:\n{$contextText}\n\nUSER QUESTION:\n{$question}";
+STRICT RULES:
+1. Answer ONLY using facts explicitly present in the CONTEXT blocks below. Never invent skills, companies, metrics, or technologies not in the context.
+2. If the context does not contain the answer, clearly state that you don't have that information in the portfolio and suggest relevant topics you DO cover (such as Plinth, Bantay PH, Alaala Collections, Vouch, his MERN + TypeScript stack, or this Laravel + pgvector RAG architecture).
+3. Be thorough, accurate, and technically specific:
+   - When asked about a project, cover its problem/purpose, architectural decisions (e.g., RBAC, multi-tenancy, state machines, caching, validation, testing), full tech stack, and include its Live URL and GitHub Repository URL if present in the context.
+   - When asked about skills, projects, or experience broadly, synthesize across ALL relevant context blocks so no major project or skill group is left out.
+4. Format responses in clean Markdown (use bold key terms and bullet points for readability).
+5. Cite your sources inline as [1], [2], etc. matching the numbered context blocks on every factual claim.
+PROMPT;
 
-            // 1. Try Groq first if GROQ_API_KEY is configured (typically ~400-700ms)
+            $userPrompt = "CONTEXT BLOCKS:\n\n{$contextText}\n\n---\nUSER QUESTION: {$question}";
+
             $llmResult = $this->generateWithGroqOrGemini($systemInstruction, $userPrompt);
 
             $latencyMs = (int) round((microtime(true) - $startTime) * 1000);
@@ -122,19 +126,16 @@ class ChatController extends Controller
     }
 
     /**
-     * Calls Groq (if GROQ_API_KEY is set) for sub-second responses,
-     * otherwise falls back to lightweight Gemini Flash-Lite models.
-     *
      * @return array{answer: string, prompt_tokens: int, completion_tokens: int}
      */
     protected function generateWithGroqOrGemini(string $systemInstruction, string $userPrompt): array
     {
-        $groqKey = trim((string) config('services.groq.key'));
+        $groqKey = trim((string) config('services.groq.key', env('GROQ_API_KEY', '')));
         $groqModel = (string) config('services.groq.chat_model', 'llama-3.3-70b-versatile');
 
         if ($groqKey !== '') {
             $groqRes = Http::withToken($groqKey)
-                ->timeout(15)
+                ->timeout(20)
                 ->post('https://api.groq.com/openai/v1/chat/completions', [
                     'model' => $groqModel,
                     'messages' => [
@@ -158,19 +159,17 @@ class ChatController extends Controller
             ]);
         }
 
-        // Gemini fallback: prioritize fast "-lite" models that don't suffer 503 overload
         $baseUrl = rtrim((string) config('services.gemini.base_url'), '/');
-        $primaryModel = (string) config('services.gemini.chat_model', 'gemini-2.5-flash-lite');
         $key = (string) config('services.gemini.key');
 
-        $candidateModels = array_values(array_unique([
-            $primaryModel,
+        // Use ONLY the verified working models on your Gemini key
+        $candidateModels = [
             'gemini-2.5-flash-lite',
             'gemini-3.5-flash-lite',
             'gemini-3.1-flash-lite',
             'gemini-flash-lite-latest',
-            'gemini-flash-latest',
-        ]));
+            'gemini-3.8-flash',
+        ];
 
         $payload = [
             'system_instruction' => [
@@ -196,7 +195,7 @@ class ChatController extends Controller
 
         foreach ($candidateModels as $model) {
             $url = "{$baseUrl}/models/{$model}:generateContent?key={$key}";
-            $res = Http::timeout(12)->post($url, $payload);
+            $res = Http::timeout(15)->post($url, $payload);
 
             if ($res->successful()) {
                 $answer = (string) data_get(
