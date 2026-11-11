@@ -339,7 +339,7 @@ export default function Home() {
                 github ↗
               </a>
               <a
-                href="https://linkedin.com"
+                href="https://www.linkedin.com/in/jvecinadev/"
                 target="_blank"
                 rel="noreferrer"
                 className="text-textMuted underline underline-offset-4 decoration-border transition-colors duration-150 hover:text-accent hover:decoration-accent focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
