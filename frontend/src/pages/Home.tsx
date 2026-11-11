@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
-import type { Project } from '../types/api';
+import type { HealthResponse, Project } from '../types/api';
 import { usePageTitle } from '../lib/usePageTitle';
 import { Button } from '../components/Button';
 import { Tag } from '../components/Tag';
@@ -14,6 +14,53 @@ import { SUGGESTED_QUESTIONS } from './Chat/SuggestedQuestions';
 
 const HOME_TEASER_QUESTIONS: readonly string[] = SUGGESTED_QUESTIONS.slice(0, 3);
 const MAX_CARD_TAGS = 5;
+
+interface SampleTrace {
+  id: string;
+  label: string;
+  question: string;
+  answer: string;
+  citationLabel: string;
+  citationTo: string;
+  similarity: string;
+  latency: string;
+}
+
+const SAMPLE_TRACES: readonly SampleTrace[] = [
+  {
+    id: 'alaala',
+    label: 'ALAALA',
+    question: 'What is Alaala Collections and what tech stack does it use?',
+    answer:
+      'Production MERN event management platform with client reservations, Cloudinary galleries, and a JWT-protected admin dashboard.',
+    citationLabel: '[1] Project: Alaala Collections',
+    citationTo: '/work/alaala-collections',
+    similarity: '0.91',
+    latency: '1.42s',
+  },
+  {
+    id: 'plinth',
+    label: 'PLINTH',
+    question: 'How does Plinth handle multi-tenant workspace access control?',
+    answer:
+      'Workspace-based tenancy with owner, admin, member, and viewer roles, Zod route validation, Redis-cached metrics, and Jest/Supertest isolation tests.',
+    citationLabel: '[1] System: Plinth SaaS',
+    citationTo: '/about',
+    similarity: '0.89',
+    latency: '1.68s',
+  },
+  {
+    id: 'bantay',
+    label: 'BANTAY PH',
+    question: 'How is RBAC implemented in Bantay PH?',
+    answer:
+      'Database-driven role-to-permission mapping resolved per request in Express 5 + Prisma/MySQL, paired with a transactional report status state machine.',
+    citationLabel: '[1] System: Bantay PH',
+    citationTo: '/about',
+    similarity: '0.87',
+    latency: '1.51s',
+  },
+];
 
 function splitProjectTitle(rawTitle: string): {
   name: string;
@@ -70,6 +117,13 @@ export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [health, setHealth] = useState<HealthResponse | null>(null);
+  const [pingMs, setPingMs] = useState<number | null>(null);
+
+  const [activeTraceId, setActiveTraceId] = useState<string>(
+    SAMPLE_TRACES[0].id
+  );
   const [portraitLoaded, setPortraitLoaded] = useState<boolean>(false);
   const [portraitError, setPortraitError] = useState<boolean>(false);
 
@@ -88,6 +142,17 @@ export default function Home() {
 
   useEffect(() => {
     void fetchProjects();
+
+    const start = performance.now();
+    api
+      .get<HealthResponse>('/health')
+      .then((res) => {
+        setHealth(res.data);
+        setPingMs(Math.max(1, Math.round(performance.now() - start)));
+      })
+      .catch(() => {
+        // Silent telemetry check
+      });
   }, [fetchProjects]);
 
   const featuredProject =
@@ -114,14 +179,25 @@ export default function Home() {
     ? formatHostname(featuredProject.liveUrl ?? featuredProject.url)
     : null;
 
+  const activeTrace =
+    SAMPLE_TRACES.find((t) => t.id === activeTraceId) ?? SAMPLE_TRACES[0];
+
   return (
     <div className="mx-auto max-w-300 px-4 sm:px-6">
-      {/* 1. Hero + Personal Portrait Dossier */}
+      {/* 1. Hero + Interactive Operator Dossier */}
       <section className="py-16 sm:py-24">
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-center">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-start">
           {/* Left Column: Locked Hero Copy */}
           <div className="lg:col-span-7 space-y-6 max-w-[72ch]">
-            <SectionLabel>FULL-STACK &amp; AI ENGINEER</SectionLabel>
+            <div className="flex flex-wrap items-center gap-3">
+              <SectionLabel>FULL-STACK &amp; AI ENGINEER</SectionLabel>
+              {health?.ok && (
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-0.5 font-mono text-xs text-textFaint">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                  pgvector online{pingMs !== null ? ` · ${pingMs}ms` : ''}
+                </span>
+              )}
+            </div>
 
             <h1 className="font-sans text-3xl font-semibold tracking-tight text-text sm:text-5xl sm:leading-[1.12]">
               I build systems that survive contact with real users.
@@ -141,6 +217,7 @@ export default function Home() {
               </Button>
             </div>
 
+            {/* Mono Strip (§3 locked items) */}
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-4 font-mono text-xs text-textFaint">
               <span className="inline-flex items-center gap-2 text-textMuted">
                 <span
@@ -177,84 +254,122 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right Column: Personal Portrait Frame + Live RAG Dossier */}
+          {/* Right Column: Personal Portrait + Interactive RAG Trace Switcher */}
           <aside
-            aria-label="John Francis Vecina portrait and RAG agent preview"
+            aria-label="Operator dossier and interactive RAG preview"
             className="lg:col-span-5 rounded-lg border border-border bg-surface p-4 sm:p-5 space-y-4"
           >
-            {/* Top Bar */}
-            <div className="flex items-center justify-between font-mono text-xs text-textFaint">
-              <span>ENGINEER // J.F. VECINA</span>
-              <span className="inline-flex items-center gap-1.5 text-textMuted">
-                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                MANILA, PH
-              </span>
-            </div>
-
-            {/* Dedicated Portrait Frame (Drop your photo at frontend/public/portrait.jpg) */}
-            <div className="relative aspect-4/3 w-full overflow-hidden rounded-lg border border-border bg-surface2">
-              {!portraitError && (
-                <img
-                  src={`${import.meta.env.BASE_URL}portrait.jpg`}
-                  alt="John Francis Vecina"
-                  width={600}
-                  height={450}
-                  onLoad={() => setPortraitLoaded(true)}
-                  onError={() => setPortraitError(true)}
-                  className={`h-full w-full object-cover transition-colors duration-150 ${
-                    portraitLoaded ? 'opacity-100' : 'opacity-0'
-                  }`}
-                />
-              )}
-
-              {/* Designed Portrait Placeholder (shown until frontend/public/portrait.jpg is added) */}
-              {(!portraitLoaded || portraitError) && (
-                <div className="absolute inset-0 flex flex-col justify-between p-4 bg-[radial-gradient(circle,#27272A_1px,transparent_1px)] bg-size-[16px_16px]">
-                  <div className="flex items-center justify-between font-mono text-xs text-textFaint">
-                    <span>[ PORTRAIT FRAME ]</span>
-                    <span>4:3</span>
-                  </div>
-
-                  <div className="my-auto flex flex-col items-center justify-center text-center space-y-2">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-lg border border-border bg-surface font-mono text-sm font-medium text-text">
+            {/* Identity Header with Portrait Slot */}
+            <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
+              <div className="flex items-center gap-3">
+                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border bg-surface2">
+                  {!portraitError && (
+                    <img
+                      src={`${import.meta.env.BASE_URL}portrait.jpg`}
+                      alt="John Francis Vecina"
+                      width={48}
+                      height={48}
+                      onLoad={() => setPortraitLoaded(true)}
+                      onError={() => setPortraitError(true)}
+                      className={`h-full w-full object-cover ${
+                        portraitLoaded ? 'opacity-100' : 'opacity-0'
+                      }`}
+                    />
+                  )}
+                  {(!portraitLoaded || portraitError) && (
+                    <div className="flex h-full w-full items-center justify-center font-mono text-xs font-medium text-text">
                       JFV
                     </div>
-                    <p className="font-sans text-sm font-medium text-text">
-                      John Francis Vecina
-                    </p>
-                    <p className="font-mono text-xs text-textFaint">
-                      Place photo at: frontend/public/portrait.jpg
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between font-mono text-xs text-textFaint">
-                    <span>FULL-STACK &amp; AI</span>
-                    <span>jvecina.dev</span>
-                  </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Static Sample RAG Exchange (§5 preview) */}
-            <div className="space-y-2.5 border-t border-border pt-3.5 font-mono text-xs">
-              <div className="rounded-lg border border-border bg-surface2 px-3 py-2 text-textMuted">
-                <span className="text-textFaint">Q: </span>
-                What is Alaala Collections?
+                <div>
+                  <p className="font-sans text-sm font-semibold text-text">
+                    John Francis Vecina
+                  </p>
+                  <p className="font-mono text-xs text-textFaint">
+                    @jvecinadev · MANILA, PH
+                  </p>
+                </div>
               </div>
 
-              <p className="px-1 font-sans text-xs leading-relaxed text-textMuted">
-                Production MERN platform for event reservations, Cloudinary
-                galleries, and JWT-protected admin operations{' '}
-                <span className="font-mono text-accent">[1]</span>.
-              </p>
+              <Link
+                to="/about"
+                className="rounded-lg border border-border bg-surface2 px-2.5 py-1 font-mono text-xs text-textMuted transition-colors duration-150 hover:border-accent/50 hover:text-text"
+              >
+                DOSSIER →
+              </Link>
+            </div>
+
+            {/* Interactive Trace Selector Tabs */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-xs text-textFaint">
+                  RAG TRACE PREVIEW
+                </span>
+                <div
+                  role="tablist"
+                  aria-label="Sample RAG traces"
+                  className="flex items-center gap-1"
+                >
+                  {SAMPLE_TRACES.map((trace) => {
+                    const isSelected = trace.id === activeTrace.id;
+                    return (
+                      <button
+                        key={trace.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={isSelected}
+                        onClick={() => setActiveTraceId(trace.id)}
+                        className={`rounded-lg border px-2 py-1 font-mono text-xs transition-colors duration-150 cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent/40 ${
+                          isSelected
+                            ? 'border-accent/60 bg-surface2 text-text'
+                            : 'border-border bg-ink text-textFaint hover:text-textMuted'
+                        }`}
+                      >
+                        {trace.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Active Trace Output */}
+              <div className="rounded-lg border border-border bg-ink p-3.5 space-y-3">
+                <div className="font-mono text-xs text-textMuted">
+                  <span className="text-accent">&gt; </span>
+                  {activeTrace.question}
+                  <span
+                    aria-hidden="true"
+                    className="ml-1 inline-block h-3 w-1.5 bg-accent align-middle animate-cursor"
+                  />
+                </div>
+
+                <p className="font-sans text-xs leading-relaxed text-textMuted">
+                  {activeTrace.answer}{' '}
+                  <span className="font-mono text-accent">[1]</span>
+                </p>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                  <Link
+                    to={activeTrace.citationTo}
+                    className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-2 py-0.5 font-mono text-xs text-textMuted transition-colors duration-150 hover:border-accent hover:text-text"
+                  >
+                    {activeTrace.citationLabel}
+                  </Link>
+                  <span className="font-mono text-xs text-textFaint">
+                    cos: {activeTrace.similarity}
+                  </span>
+                </div>
+              </div>
 
               <div className="flex flex-wrap items-center justify-between gap-2 pt-1 font-mono text-xs text-textFaint">
-                <span>1.84s · 2 sources · grounded</span>
+                <span>{activeTrace.latency} · 2 sources · grounded</span>
                 <Link
-                  to="/chat?q=What%20is%20Alaala%20Collections%20and%20what%20tech%20stack%20does%20it%20use%3F"
+                  to={`/chat?q=${encodeURIComponent(activeTrace.question)}`}
                   className="text-text transition-colors duration-150 hover:text-accent focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
                 >
-                  [ Try it yourself → ]
+                  [ Run live query → ]
                 </Link>
               </div>
             </div>
@@ -262,7 +377,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 2. Featured Project (with Screenshot / Visual Preview) */}
+      {/* 2. Featured Project */}
       <section className="border-t border-border py-16 sm:py-24 space-y-8">
         <div className="flex items-center justify-between gap-4">
           <SectionLabel index="01" label="FEATURED PRODUCTION SYSTEM" />
@@ -358,7 +473,7 @@ export default function Home() {
                       to={`/work/${featuredProject.slug}`}
                       className="font-medium text-text transition-colors duration-150 hover:text-accent focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg py-1"
                     >
-                      VIEW CASE STUDY →
+                      VIEW →
                     </Link>
                     <Link
                       to={`/chat?q=${encodeURIComponent(
@@ -432,7 +547,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. Selected Work Grid (Visual Cards) */}
+      {/* 4. Selected Work Grid */}
       <section className="border-t border-border py-16 sm:py-24 space-y-8">
         <div className="flex items-center justify-between gap-4">
           <SectionLabel index="03" label="SELECTED WORK" />
