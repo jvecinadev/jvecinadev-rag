@@ -62,6 +62,82 @@ const SAMPLE_TRACES: readonly SampleTrace[] = [
   },
 ];
 
+const CORE_CAPABILITIES = [
+  {
+    label: 'FULL-STACK',
+    value: 'React · TypeScript · Node.js · Laravel',
+  },
+  {
+    label: 'DATA & INFRA',
+    value: 'PostgreSQL · MySQL · MongoDB · Redis · Docker',
+  },
+  {
+    label: 'AI & RETRIEVAL',
+    value: 'Gemini Embeddings · pgvector RAG · Grounded Q&A',
+  },
+] as const;
+
+function BrandLogoSlot() {
+  const [logoSrc, setLogoSrc] = useState<string>(
+    `${import.meta.env.BASE_URL}logo.svg`
+  );
+  const [triedPng, setTriedPng] = useState<boolean>(false);
+  const [logoLoaded, setLogoLoaded] = useState<boolean>(false);
+  const [logoFailed, setLogoFailed] = useState<boolean>(false);
+
+  const handleLogoError = () => {
+    if (!triedPng) {
+      setTriedPng(true);
+      setLogoSrc(`${import.meta.env.BASE_URL}logo.png`);
+    } else {
+      setLogoFailed(true);
+    }
+  };
+
+  return (
+    <div
+      title="Brand Mark (frontend/public/logo.svg or logo.png)"
+      className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface2"
+    >
+      {!logoFailed && (
+        <img
+          src={logoSrc}
+          alt="jvecina.dev logo"
+          width={40}
+          height={40}
+          onLoad={() => setLogoLoaded(true)}
+          onError={handleLogoError}
+          className={`h-full w-full object-contain p-1.5 ${
+            logoLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      )}
+      {(!logoLoaded || logoFailed) && (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+          className="h-5 w-5 text-accent"
+        >
+          <path
+            d="M4 7L9 12L4 17"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M12 17H20"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
+      )}
+    </div>
+  );
+}
+
 function splitProjectTitle(rawTitle: string): {
   name: string;
   subtitle: string | null;
@@ -198,30 +274,44 @@ export default function Home() {
   return (
     <div className="mx-auto max-w-300 px-4 sm:px-6">
       {/* 1. Hero + Interactive Operator Dossier */}
-      <section className="py-12 sm:py-24">
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-start">
-          {/* Left Column: Locked Hero Copy */}
-          <div className="lg:col-span-7 space-y-6 max-w-[72ch]">
-            <div className="flex flex-wrap items-center gap-3">
-              <SectionLabel>FULL-STACK &amp; AI ENGINEER</SectionLabel>
-              {health?.ok && (
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-0.5 font-mono text-xs text-textFaint">
-                  <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                  pgvector online{pingMs !== null ? ` · ${pingMs}ms` : ''}
-                </span>
-              )}
+      <section className="py-12 sm:py-20 lg:py-24">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-center">
+          {/* Left Column: Brand Identity + Locked Hero Copy + Stack Strip */}
+          <div className="lg:col-span-7 space-y-7 max-w-[72ch]">
+            {/* Brand Logo + Role Label + Live Telemetry */}
+            <div className="flex flex-wrap items-center gap-3.5">
+              <BrandLogoSlot />
+
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <SectionLabel>FULL-STACK &amp; AI ENGINEER</SectionLabel>
+                  {health?.ok && (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2 py-0.5 font-mono text-[11px] text-textMuted">
+                      <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                      pgvector online{pingMs !== null ? ` · ${pingMs}ms` : ''}
+                    </span>
+                  )}
+                </div>
+                <p className="font-mono text-xs text-textFaint">
+                  JOHN FRANCIS VECINA // JVECINA.DEV
+                </p>
+              </div>
             </div>
 
-            <h1 className="font-sans text-3xl font-semibold tracking-tight text-text sm:text-5xl sm:leading-[1.12]">
-              I build systems that survive contact with real users.
-            </h1>
+            {/* Primary Headline & Subheadline */}
+            <div className="space-y-4">
+              <h1 className="font-sans text-3xl font-semibold tracking-tight text-text sm:text-5xl lg:text-[52px] sm:leading-[1.08]">
+                I build systems that survive contact with real users.
+              </h1>
 
-            <p className="font-sans text-base leading-relaxed text-textMuted sm:text-lg">
-              Laravel, React, Postgres, and RAG pipelines. Based in Manila, open
-              to full-stack and AI engineering roles.
-            </p>
+              <p className="font-sans text-base leading-relaxed text-textMuted sm:text-lg max-w-[60ch]">
+                Laravel, React, Postgres, and RAG pipelines. Based in Manila,
+                open to full-stack and AI engineering roles.
+              </p>
+            </div>
 
-            <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:flex-wrap sm:items-center">
+            {/* Primary & Secondary CTAs (Mandatory Entry Point #2) */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Button variant="primary" to="/chat" className="w-full sm:w-auto">
                 Ask my portfolio anything →
               </Button>
@@ -231,170 +321,191 @@ export default function Home() {
             </div>
 
             {/* Mono Strip (§3 locked items) */}
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-4 font-mono text-xs text-textFaint">
-              <span className="inline-flex items-center gap-2 text-textMuted">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-5 font-mono text-xs text-textFaint">
+              <span className="inline-flex items-center gap-2 text-text">
                 <span
                   aria-hidden="true"
                   className="h-2 w-2 rounded-full bg-accent"
                 />
                 Available
               </span>
-              <span>Manila</span>
+              <span className="text-textMuted">Manila</span>
               <a
                 href="https://github.com/jvecinadev"
                 target="_blank"
                 rel="noreferrer"
-                className="transition-colors duration-150 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
+                className="text-textMuted underline underline-offset-4 decoration-border transition-colors duration-150 hover:text-accent hover:decoration-accent focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
               >
-                github
+                github ↗
               </a>
               <a
                 href="https://linkedin.com"
                 target="_blank"
                 rel="noreferrer"
-                className="transition-colors duration-150 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
+                className="text-textMuted underline underline-offset-4 decoration-border transition-colors duration-150 hover:text-accent hover:decoration-accent focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
               >
-                linkedin
+                linkedin ↗
               </a>
               <a
                 href="/resume.pdf"
                 target="_blank"
                 rel="noreferrer"
-                className="transition-colors duration-150 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
+                className="text-textMuted underline underline-offset-4 decoration-border transition-colors duration-150 hover:text-accent hover:decoration-accent focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
               >
-                resume.pdf
+                resume.pdf ↗
               </a>
+            </div>
+
+            {/* Scannable Engineering Stack Architecture Strip */}
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 pt-1">
+              {CORE_CAPABILITIES.map((cap) => (
+                <div
+                  key={cap.label}
+                  className="rounded-lg border border-border bg-surface/70 px-3.5 py-2.5"
+                >
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-accent">
+                    {cap.label}
+                  </p>
+                  <p className="mt-1 font-mono text-xs text-textMuted leading-snug">
+                    {cap.value}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Right Column: Personal Portrait + Interactive RAG Trace Switcher */}
+          {/* Right Column: Double-Framed Operator Dossier + Live RAG Trace Inspector */}
           <aside
             aria-label="Operator dossier and interactive RAG preview"
-            className="lg:col-span-5 rounded-lg border border-border bg-surface overflow-hidden"
+            className="lg:col-span-5 rounded-lg border border-border bg-surface p-2"
           >
-            {/* Subtle Terminal Chrome Bar */}
-            <div className="flex items-center justify-between border-b border-border bg-surface2/60 px-4 py-2 font-mono text-[11px] text-textFaint">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-accent" />
-                <span className="text-textMuted">jvecina.dev // rag-agent</span>
-              </div>
-              <span>gemini · pgvector</span>
-            </div>
-
-            <div className="p-4 sm:p-5 space-y-4">
-              {/* Identity Header with Portrait Slot */}
-              <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border bg-surface2">
-                    {!portraitError && (
-                      <img
-                        src={`${import.meta.env.BASE_URL}portrait.jpg`}
-                        alt="John Francis Vecina"
-                        width={48}
-                        height={48}
-                        onLoad={() => setPortraitLoaded(true)}
-                        onError={() => setPortraitError(true)}
-                        className={`h-full w-full object-cover ${
-                          portraitLoaded ? 'opacity-100' : 'opacity-0'
-                        }`}
-                      />
-                    )}
-                    {(!portraitLoaded || portraitError) && (
-                      <div className="flex h-full w-full items-center justify-center font-mono text-xs font-medium text-accent">
-                        JFV
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="min-w-0">
-                    <p className="font-sans text-sm font-semibold text-text truncate">
-                      John Francis Vecina
-                    </p>
-                    <p className="font-mono text-xs text-textFaint truncate">
-                      @jvecinadev · MANILA, PH
-                    </p>
-                  </div>
-                </div>
-
-                <Link
-                  to="/about"
-                  className="shrink-0 rounded-lg border border-border bg-surface2 px-2.5 py-1 font-mono text-xs text-textMuted transition-colors duration-150 hover:border-accent/50 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40"
-                >
-                  DOSSIER →
-                </Link>
-              </div>
-
-              {/* Interactive Trace Selector Tabs */}
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-mono text-xs text-textFaint">
-                    RAG TRACE PREVIEW
+            <div className="rounded-lg border border-border bg-ink overflow-hidden">
+              {/* Top Console Chrome */}
+              <div className="flex items-center justify-between border-b border-border bg-surface2/70 px-4 py-2.5 font-mono text-[11px] text-textFaint">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-accent" />
+                  <span className="text-text font-medium">
+                    jvecina.dev // rag-agent
                   </span>
-                  <div
-                    role="tablist"
-                    aria-label="Sample RAG traces"
-                    className="flex items-center gap-1"
-                  >
-                    {SAMPLE_TRACES.map((trace) => {
-                      const isSelected = trace.id === activeTrace.id;
-                      return (
-                        <button
-                          key={trace.id}
-                          type="button"
-                          role="tab"
-                          aria-selected={isSelected}
-                          onClick={() => setActiveTraceId(trace.id)}
-                          className={`rounded-lg border px-2 py-1 font-mono text-xs transition-colors duration-150 cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent/40 ${
-                            isSelected
-                              ? 'border-accent/60 bg-surface2 text-text'
-                              : 'border-border bg-ink text-textFaint hover:text-textMuted'
+                </div>
+                <span>gemini · pgvector</span>
+              </div>
+
+              <div className="p-4 sm:p-5 space-y-5">
+                {/* Operator Identity Header with Portrait Slot */}
+                <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border bg-surface2">
+                      {!portraitError && (
+                        <img
+                          src={`${import.meta.env.BASE_URL}portrait.jpg`}
+                          alt="John Francis Vecina"
+                          width={48}
+                          height={48}
+                          onLoad={() => setPortraitLoaded(true)}
+                          onError={() => setPortraitError(true)}
+                          className={`h-full w-full object-cover ${
+                            portraitLoaded ? 'opacity-100' : 'opacity-0'
                           }`}
-                        >
-                          {trace.label}
-                        </button>
-                      );
-                    })}
+                        />
+                      )}
+                      {(!portraitLoaded || portraitError) && (
+                        <div className="flex h-full w-full items-center justify-center font-mono text-xs font-medium text-accent">
+                          JFV
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="font-sans text-sm font-semibold text-text truncate">
+                        John Francis Vecina
+                      </p>
+                      <p className="font-mono text-xs text-textFaint truncate">
+                        @jvecinadev · Manila, PH
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                {/* Active Trace Output */}
-                <div className="rounded-lg border border-border bg-ink p-3.5 space-y-3">
-                  <div className="font-mono text-xs text-text leading-relaxed">
-                    <span className="text-accent">&gt; </span>
-                    {activeTrace.question}
-                    <span
-                      aria-hidden="true"
-                      className="ml-1 inline-block h-3 w-1.5 bg-accent align-middle animate-cursor"
-                    />
-                  </div>
-
-                  <p className="font-sans text-xs leading-relaxed text-textMuted">
-                    {activeTrace.answer}{' '}
-                    <span className="font-mono text-accent">[1]</span>
-                  </p>
-
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-2.5">
-                    <Link
-                      to={activeTrace.citationTo}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2 py-0.5 font-mono text-xs text-textMuted transition-colors duration-150 hover:border-accent hover:text-text"
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                      {activeTrace.citationLabel}
-                    </Link>
-                    <span className="font-mono text-xs text-accent">
-                      cos: {activeTrace.similarity}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 font-mono text-xs text-textFaint">
-                  <span>{activeTrace.latency} · 2 sources · grounded</span>
                   <Link
-                    to={`/chat?q=${encodeURIComponent(activeTrace.question)}`}
-                    className="text-text transition-colors duration-150 hover:text-accent focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
+                    to="/about"
+                    className="shrink-0 rounded-lg border border-border bg-surface px-2.5 py-1.5 font-mono text-xs text-textMuted transition-colors duration-150 hover:border-accent/50 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40"
                   >
-                    [ Run live query → ]
+                    DOSSIER →
                   </Link>
+                </div>
+
+                {/* Interactive Trace Selector Tabs */}
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-mono text-[11px] uppercase tracking-wider text-textFaint">
+                      GROUNDED TRACE PREVIEW
+                    </span>
+                    <div
+                      role="tablist"
+                      aria-label="Sample RAG traces"
+                      className="flex items-center gap-1"
+                    >
+                      {SAMPLE_TRACES.map((trace) => {
+                        const isSelected = trace.id === activeTrace.id;
+                        return (
+                          <button
+                            key={trace.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={isSelected}
+                            onClick={() => setActiveTraceId(trace.id)}
+                            className={`rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-colors duration-150 cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent/40 ${
+                              isSelected
+                                ? 'border-accent bg-accent/10 text-text font-medium'
+                                : 'border-border bg-surface text-textFaint hover:text-textMuted'
+                            }`}
+                          >
+                            {trace.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Active Trace Output Card */}
+                  <div className="rounded-lg border border-border bg-surface p-4 space-y-3.5">
+                    <div className="font-mono text-xs text-text leading-relaxed">
+                      <span className="text-accent">&gt; </span>
+                      {activeTrace.question}
+                      <span
+                        aria-hidden="true"
+                        className="ml-1 inline-block h-3 w-1.5 bg-accent align-middle animate-cursor"
+                      />
+                    </div>
+
+                    <p className="font-sans text-xs sm:text-sm leading-relaxed text-textMuted border-t border-border pt-3">
+                      {activeTrace.answer}{' '}
+                      <span className="font-mono text-xs text-accent">[1]</span>
+                    </p>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+                      <Link
+                        to={activeTrace.citationTo}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-ink px-2.5 py-1 font-mono text-xs text-textMuted transition-colors duration-150 hover:border-accent hover:text-text"
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                        {activeTrace.citationLabel}
+                      </Link>
+                      <span className="font-mono text-xs text-accent">
+                        cos: {activeTrace.similarity}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1 font-mono text-xs text-textFaint">
+                    <span>{activeTrace.latency} · 2 sources · grounded</span>
+                    <Link
+                      to={`/chat?q=${encodeURIComponent(activeTrace.question)}`}
+                      className="text-accent transition-colors duration-150 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
+                    >
+                      [ Run live query → ]
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
@@ -438,107 +549,120 @@ export default function Home() {
         )}
 
         {!loading && !error && featuredProject && featuredTitle && (
-          <article className="rounded-lg border border-accent/30 bg-surface p-5 sm:p-8 transition-colors duration-150 hover:border-accent/50 hover:bg-surface2/60">
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-center">
-              {/* Left Column: Visual Screenshot / Preview Frame */}
-              <div className="lg:col-span-6">
-                <Link
-                  to={`/work/${featuredProject.slug}`}
-                  className="block focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
-                >
-                  <ProjectPreviewImage project={featuredProject} priority />
-                </Link>
+          <article className="rounded-lg border border-border bg-surface overflow-hidden transition-colors duration-150 hover:border-accent/40">
+            {/* Top Case Study Meta Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-surface2/60 px-5 py-2.5 sm:px-8 font-mono text-xs">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-accent" />
+                <span className="text-text uppercase">
+                  CASE STUDY // {featuredProject.slug}
+                </span>
               </div>
+              <span className="text-textFaint">PRODUCTION DEPLOYMENT</span>
+            </div>
 
-              {/* Right Column: Engineering Details */}
-              <div className="lg:col-span-6 space-y-5">
-                <div className="space-y-1.5">
-                  {featuredTitle.subtitle && (
-                    <p className="font-mono text-xs uppercase tracking-wider text-accent">
-                      {featuredTitle.subtitle}
-                    </p>
-                  )}
-                  <h2 className="font-sans text-2xl font-semibold tracking-tight text-text sm:text-3xl">
-                    <Link
-                      to={`/work/${featuredProject.slug}`}
-                      className="transition-colors duration-150 hover:text-accent focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
-                    >
-                      {featuredTitle.name}
-                    </Link>
-                  </h2>
+            <div className="p-5 sm:p-8">
+              <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-center">
+                {/* Left Column: Visual Screenshot / Preview Frame */}
+                <div className="lg:col-span-6">
+                  <Link
+                    to={`/work/${featuredProject.slug}`}
+                    className="block focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
+                  >
+                    <ProjectPreviewImage project={featuredProject} priority />
+                  </Link>
                 </div>
 
-                <p className="font-sans text-sm leading-relaxed text-textMuted sm:text-base">
-                  {featuredProject.summary}
-                </p>
-
-                {featuredProject.highlights &&
-                  featuredProject.highlights.length > 0 && (
-                    <ul className="space-y-2 border-t border-border pt-4">
-                      {featuredProject.highlights
-                        .slice(0, 3)
-                        .map((item, idx) => (
-                          <li
-                            key={item}
-                            className="flex items-start gap-2.5 font-sans text-xs sm:text-sm leading-relaxed text-textMuted"
-                          >
-                            <span className="font-mono text-xs text-accent shrink-0 pt-0.5">
-                              0{idx + 1}
-                            </span>
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                    </ul>
-                  )}
-
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {featuredStack.slice(0, 7).map((tag) => (
-                    <Tag key={tag}>{tag}</Tag>
-                  ))}
-                  {featuredStack.length > 7 && (
-                    <Tag>+{featuredStack.length - 7}</Tag>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4 font-mono text-xs">
-                  <div className="flex items-center gap-4">
-                    <Link
-                      to={`/work/${featuredProject.slug}`}
-                      className="font-medium text-text transition-colors duration-150 hover:text-accent focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg py-1"
-                    >
-                      VIEW CASE STUDY &amp; README →
-                    </Link>
-                    <Link
-                      to={`/chat?q=${encodeURIComponent(
-                        `Tell me about ${featuredProject.title}`
-                      )}`}
-                      className="text-textMuted transition-colors duration-150 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg py-1"
-                    >
-                      ASK AGENT →
-                    </Link>
+                {/* Right Column: Engineering Details */}
+                <div className="lg:col-span-6 space-y-5">
+                  <div className="space-y-1.5">
+                    {featuredTitle.subtitle && (
+                      <p className="font-mono text-xs uppercase tracking-wider text-accent">
+                        {featuredTitle.subtitle}
+                      </p>
+                    )}
+                    <h2 className="font-sans text-2xl font-semibold tracking-tight text-text sm:text-3xl">
+                      <Link
+                        to={`/work/${featuredProject.slug}`}
+                        className="transition-colors duration-150 hover:text-accent focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
+                      >
+                        {featuredTitle.name}
+                      </Link>
+                    </h2>
                   </div>
 
-                  <div className="flex items-center gap-3 text-textFaint">
-                    {featuredLiveUrl && (
-                      <a
-                        href={featuredLiveUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-accent transition-colors duration-150 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg py-1"
-                      >
-                        LIVE ↗
-                      </a>
+                  <p className="font-sans text-sm leading-relaxed text-textMuted sm:text-base">
+                    {featuredProject.summary}
+                  </p>
+
+                  {featuredProject.highlights &&
+                    featuredProject.highlights.length > 0 && (
+                      <ul className="space-y-2 border-t border-border pt-4">
+                        {featuredProject.highlights
+                          .slice(0, 3)
+                          .map((item, idx) => (
+                            <li
+                              key={item}
+                              className="flex items-start gap-2.5 font-sans text-xs sm:text-sm leading-relaxed text-textMuted"
+                            >
+                              <span className="font-mono text-xs text-accent shrink-0 pt-0.5">
+                                0{idx + 1}
+                              </span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                      </ul>
                     )}
-                    {featuredProject.githubUrl && (
-                      <a
-                        href={featuredProject.githubUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="transition-colors duration-150 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg py-1"
-                      >
-                        REPO ↗
-                      </a>
+
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {featuredStack.slice(0, 7).map((tag) => (
+                      <Tag key={tag}>{tag}</Tag>
+                    ))}
+                    {featuredStack.length > 7 && (
+                      <Tag>+{featuredStack.length - 7}</Tag>
                     )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4 font-mono text-xs">
+                    <div className="flex items-center gap-4">
+                      <Link
+                        to={`/work/${featuredProject.slug}`}
+                        className="font-medium text-text transition-colors duration-150 hover:text-accent focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg py-1"
+                      >
+                        VIEW CASE STUDY &amp; README →
+                      </Link>
+                      <Link
+                        to={`/chat?q=${encodeURIComponent(
+                          `Tell me about ${featuredProject.title}`
+                        )}`}
+                        className="text-textMuted transition-colors duration-150 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg py-1"
+                      >
+                        ASK AGENT →
+                      </Link>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-textFaint">
+                      {featuredLiveUrl && (
+                        <a
+                          href={featuredLiveUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-accent transition-colors duration-150 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg py-1"
+                        >
+                          LIVE ↗
+                        </a>
+                      )}
+                      {featuredProject.githubUrl && (
+                        <a
+                          href={featuredProject.githubUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="transition-colors duration-150 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg py-1"
+                        >
+                          REPO ↗
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -547,64 +671,74 @@ export default function Home() {
         )}
       </section>
 
-      {/* 3. Chat Teaser (Mid-page entry point) */}
-      <section className="border-t border-border py-14 sm:py-24 space-y-8">
-        <div className="max-w-[72ch] space-y-3">
-          <SectionLabel index="02" label="INTERROGATE MY WORK" />
-          <h2 className="font-sans text-2xl font-semibold tracking-tight text-text">
-            Skip the scrolling. Query the codebase &amp; case studies.
-          </h2>
-          <p className="font-sans text-sm leading-relaxed text-textMuted sm:text-base">
-            Every answer is retrieved via pgvector similarity search over my
-            project writeups and experience, with inline citations to the source.
-          </p>
-        </div>
+      {/* 3. Chat Teaser (Mid-page entry point #3) */}
+      <section className="border-t border-border py-14 sm:py-24">
+        <div className="rounded-lg border border-border bg-surface p-5 sm:p-8 space-y-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-[68ch] space-y-3">
+              <SectionLabel index="02" label="INTERROGATE MY WORK" />
+              <h2 className="font-sans text-2xl font-semibold tracking-tight text-text sm:text-3xl">
+                Skip the scrolling. Query the codebase &amp; case studies.
+              </h2>
+              <p className="font-sans text-sm leading-relaxed text-textMuted sm:text-base">
+                Every answer is retrieved via pgvector similarity search over my
+                project writeups and experience, with inline citations to the
+                source.
+              </p>
+            </div>
 
-        {/* Direct Prompt Bar into /chat */}
-        <form
-          onSubmit={handleQuickPromptSubmit}
-          className="flex flex-col gap-2.5 sm:flex-row max-w-2xl"
-        >
-          <div className="relative flex-1">
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center font-mono text-xs text-accent"
+            {/* Direct Prompt Bar into /chat */}
+            <form
+              onSubmit={handleQuickPromptSubmit}
+              className="flex w-full flex-col gap-2.5 sm:flex-row lg:max-w-md"
             >
-              &gt;
-            </span>
-            <input
-              type="text"
-              value={quickPrompt}
-              onChange={(e) => setQuickPrompt(e.target.value)}
-              placeholder="Ask about any project, stack decision, or architecture..."
-              aria-label="Ask my portfolio agent a question"
-              maxLength={1000}
-              className="w-full rounded-lg border border-border bg-surface pl-8 pr-4 py-2.5 font-mono text-xs text-text placeholder:text-textFaint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40"
-            />
+              <div className="relative flex-1">
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center font-mono text-xs text-accent"
+                >
+                  &gt;
+                </span>
+                <input
+                  type="text"
+                  value={quickPrompt}
+                  onChange={(e) => setQuickPrompt(e.target.value)}
+                  placeholder="Ask about any project or stack..."
+                  aria-label="Ask my portfolio agent a question"
+                  maxLength={1000}
+                  className="w-full rounded-lg border border-border bg-ink pl-8 pr-4 py-2.5 font-mono text-xs text-text placeholder:text-textFaint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40"
+                />
+              </div>
+              <Button
+                type="submit"
+                variant="primary"
+                className="w-full sm:w-auto shrink-0 text-xs"
+              >
+                Ask Agent →
+              </Button>
+            </form>
           </div>
-          <Button
-            type="submit"
-            variant="primary"
-            className="w-full sm:w-auto shrink-0 text-xs"
-          >
-            Ask Agent →
-          </Button>
-        </form>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          {HOME_TEASER_QUESTIONS.map((question) => (
-            <Button
-              key={question}
-              variant="ghost"
-              to={`/chat?q=${encodeURIComponent(question)}`}
-              className="justify-between text-left font-mono text-xs leading-relaxed p-4 h-auto"
-            >
-              <span className="text-textMuted">{question}</span>
-              <span aria-hidden="true" className="text-accent shrink-0 pl-2">
-                →
-              </span>
-            </Button>
-          ))}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3 border-t border-border pt-6">
+            {HOME_TEASER_QUESTIONS.map((question, idx) => (
+              <Button
+                key={question}
+                variant="ghost"
+                to={`/chat?q=${encodeURIComponent(question)}`}
+                className="flex-col items-start justify-between gap-3 text-left font-mono text-xs leading-relaxed p-4 h-auto bg-ink hover:bg-surface2"
+              >
+                <span className="text-[11px] text-accent">
+                  PROMPT 0{idx + 1}
+                </span>
+                <div className="flex w-full items-end justify-between gap-3">
+                  <span className="text-textMuted">{question}</span>
+                  <span aria-hidden="true" className="text-accent shrink-0">
+                    →
+                  </span>
+                </div>
+              </Button>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -614,7 +748,7 @@ export default function Home() {
           <SectionLabel index="03" label="SELECTED WORK" />
           <Link
             to="/work"
-            className="font-mono text-xs text-textMuted transition-colors duration-150 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg px-2 py-1 -mr-2"
+            className="font-mono text-xs text-textMuted transition-colors duration-150 hover:text-accent focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg px-2 py-1 -mr-2"
           >
             ALL WORK ({projects.length || '…'}) →
           </Link>
@@ -646,7 +780,7 @@ export default function Home() {
 
         {!loading && !error && gridProjects.length > 0 && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {gridProjects.map((project) => {
+            {gridProjects.map((project, idx) => {
               const { name, subtitle } = splitProjectTitle(project.title);
               const stack =
                 project.techStack?.length > 0
@@ -662,6 +796,13 @@ export default function Home() {
                   className="flex flex-col justify-between rounded-lg border border-border bg-surface p-5 transition-colors duration-150 hover:border-accent/40 hover:bg-surface2"
                 >
                   <div className="space-y-4">
+                    <div className="flex items-center justify-between font-mono text-[11px] text-textFaint">
+                      <span>0{idx + 1} // SYSTEM</span>
+                      <span className={liveUrl ? 'text-accent' : 'text-textFaint'}>
+                        {liveUrl ? '● LIVE' : 'REPOSITORY'}
+                      </span>
+                    </div>
+
                     <Link
                       to={`/work/${project.slug}`}
                       className="block focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
@@ -669,7 +810,7 @@ export default function Home() {
                       <ProjectPreviewImage project={project} />
                     </Link>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       {subtitle && (
                         <p className="font-mono text-xs text-accent truncate">
                           {subtitle}
