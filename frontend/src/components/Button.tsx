@@ -1,12 +1,14 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, type LinkProps } from 'react-router-dom';
 
-export type ButtonVariant = 'primary' | 'ghost' | 'icon';
+type Variant = 'primary' | 'ghost' | 'subtle';
+type Size = 'sm' | 'md';
 
 interface BaseProps {
-  variant?: ButtonVariant;
-  className?: string;
+  variant?: Variant;
+  size?: Size;
   children: React.ReactNode;
+  className?: string;
 }
 
 type ButtonAsButton = BaseProps &
@@ -16,7 +18,7 @@ type ButtonAsButton = BaseProps &
   };
 
 type ButtonAsLink = BaseProps &
-  Omit<React.ComponentPropsWithoutRef<typeof Link>, keyof BaseProps> & {
+  Omit<LinkProps, keyof BaseProps> & {
     to: string;
     href?: undefined;
   };
@@ -29,29 +31,41 @@ type ButtonAsAnchor = BaseProps &
 
 export type ButtonProps = ButtonAsButton | ButtonAsLink | ButtonAsAnchor;
 
-const BASE_CLASSES =
-  'inline-flex items-center justify-center gap-2 rounded-lg font-mono text-xs font-medium transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:pointer-events-none disabled:opacity-50 cursor-pointer';
+export const Button: React.FC<ButtonProps> = (props) => {
+  const {
+    variant = 'primary',
+    size = 'md',
+    className = '',
+    children,
+  } = props;
 
-const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary:
-    'border border-accent bg-accent px-4 py-2.5 text-ink hover:bg-accent/90',
-  ghost:
-    'border border-border bg-surface px-4 py-2.5 text-text hover:border-accent/50 hover:bg-surface2',
-  icon: 'border border-border bg-surface p-2 text-textMuted hover:border-accent/50 hover:bg-surface2 hover:text-text',
-};
+  const baseClasses =
+    'inline-flex items-center justify-center gap-2 font-sans font-medium rounded-md transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:opacity-50 disabled:pointer-events-none cursor-pointer';
 
-export function Button(props: ButtonProps) {
-  const { variant = 'primary', className = '', children } = props;
-  const combinedClassName = `${BASE_CLASSES} ${VARIANT_CLASSES[variant]} ${className}`.trim();
+  const variantClasses: Record<Variant, string> = {
+    primary: 'bg-accent text-ink hover:bg-accent/90 font-medium',
+    ghost:
+      'bg-transparent border border-border text-text hover:border-textMuted hover:bg-surface2',
+    subtle:
+      'bg-transparent text-textMuted hover:text-text hover:bg-surface2',
+  };
 
-  if ('to' in props && props.to !== undefined) {
+  const sizeClasses: Record<Size, string> = {
+    sm: 'px-3 py-1.5 text-xs',
+    md: 'px-4 py-2 text-sm',
+  };
+
+  const combinedClassName = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`.trim();
+
+  if (typeof props.to === 'string') {
     const {
       to,
-      variant: _variant,
-      className: _className,
-      children: _children,
+      variant: _v,
+      size: _s,
+      className: _c,
+      children: _ch,
       ...linkRest
-    } = props;
+    } = props as ButtonAsLink;
     return (
       <Link to={to} className={combinedClassName} {...linkRest}>
         {children}
@@ -59,21 +73,22 @@ export function Button(props: ButtonProps) {
     );
   }
 
-  if ('href' in props && props.href !== undefined) {
+  if (typeof props.href === 'string') {
     const {
       href,
-      variant: _variant,
-      className: _className,
-      children: _children,
+      variant: _v,
+      size: _s,
+      className: _c,
+      children: _ch,
       ...anchorRest
-    } = props;
+    } = props as ButtonAsAnchor;
     const isExternal = href.startsWith('http');
     return (
       <a
         href={href}
+        className={combinedClassName}
         target={isExternal ? '_blank' : anchorRest.target}
         rel={isExternal ? 'noreferrer' : anchorRest.rel}
-        className={combinedClassName}
         {...anchorRest}
       >
         {children}
@@ -82,16 +97,19 @@ export function Button(props: ButtonProps) {
   }
 
   const {
-    variant: _variant,
-    className: _className,
-    children: _children,
+    variant: _v,
+    size: _s,
+    className: _c,
+    children: _ch,
     type = 'button',
     ...buttonRest
-  } = props;
+  } = props as ButtonAsButton;
 
   return (
     <button type={type} className={combinedClassName} {...buttonRest}>
       {children}
     </button>
   );
-}
+};
+
+export default Button;
