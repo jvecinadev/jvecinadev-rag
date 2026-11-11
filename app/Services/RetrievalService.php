@@ -11,19 +11,10 @@ class RetrievalService
     ) {}
 
     /**
-     * Embeds the question and searches pgvector for top-$k chunks with similarity > 0.5
-     *
-     * @return array<int, array{
-     *   chunk_id: int,
-     *   content: string,
-     *   chunkable_type: string,
-     *   chunkable_id: int,
-     *   similarity: float,
-     *   title: string,
-     *   url: ?string
-     * }>
+     * Embeds the question, searches pgvector for top chunks with similarity > 0.5,
+     * and applies a small keyword boost when exact technical terms match.
      */
-    public function search(string $question, int $k = 5): array
+    public function search(string $question, int $k = 8): array
     {
         $vector = $this->embeddingService->embed($question);
         $literal = EmbeddingService::toVectorLiteral($vector);
@@ -35,15 +26,29 @@ class RetrievalService
              WHERE embedding IS NOT NULL
              ORDER BY embedding <=> ?::vector
              LIMIT ?',
-            [$literal, $literal, $k]
+            [$literal, $literal, 12]
         );
+
+        // Extract meaningful keywords (>=3 chars) for hybrid exact-match boosting
+        $stopWords = ['what', 'how', 'why', 'does', 'did', 'the', 'and', 'for', 'with', 'you', 'your', 'john', 'vecina', 'built', 'build', 'use', 'used', 'tell', 'about', 'can', 'are', 'his'];
+        $words = preg_split('/[^a-zA-Z0-9]+/', strtolower($question)) ?: [];
+        $keywords = array_values(array_filter($words, fn ($w) => strlen($w) >= 3 && !in_array($w, $stopWords, true)));
 
         $results = [];
 
         foreach ($rows as $row) {
             $similarity = (float) $row->similarity;
-            if ($similarity <= 0.5) {
+            if ($similarity <= 0.50) {
                 continue;
+            }
+
+            // Hybrid keyword boost: if chunk contains exact keywords from question, boost score slightly for ranking
+            $contentLower = strtolower((string) $row->content);
+            $boost = 0.0;
+            foreach ($keywords as $kw) {
+                if (str_contains($contentLower, $kw)) {
+                    $boost += 0.03;
+                }
             }
 
             $parent = $this->resolveParent($row->chunkable_type, (int) $row->chunkable_id);
@@ -54,17 +59,19 @@ class RetrievalService
                 'chunkable_type' => (string) $row->chunkable_type,
                 'chunkable_id' => (int) $row->chunkable_id,
                 'similarity' => round($similarity, 4),
+                'score' => $similarity + min($boost, 0.12),
                 'title' => $parent['title'],
                 'url' => $parent['url'],
             ];
         }
 
-        return $results;
+        // Sort by hybrid score descending and take top $k
+        usort($results, fn ($a, $b) => $b['score'] <=> $a['score']);
+
+        return array_slice($results, 0, $k);
     }
 
     /**
-     * Resolves parent Project/Post/Experience metadata for citation chips.
-     *
      * @return array{title: string, url: ?string}
      */
     protected function resolveParent(string $modelClass, int $id): array
@@ -80,7 +87,6 @@ class RetrievalService
 
         $shortType = class_basename($modelClass);
 
-        // Build an internal or external link for the citation chip
         $url = $model->url;
         if ($shortType === 'Project' && !empty($model->slug)) {
             $url = "/work/{$model->slug}";

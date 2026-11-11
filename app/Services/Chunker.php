@@ -5,12 +5,13 @@ namespace App\Services;
 class Chunker
 {
     /**
-     * Target ~400 tokens (~1600 chars) with ~50 token (~200 chars) overlap.
+     * Target ~800 tokens (~3200 chars) with ~75 token (~300 chars) overlap
+     * so a full project case study stays together in one self-contained chunk.
      */
     public function chunk(string $body, string $title, string $typeLabel = 'Project'): array
     {
-        $targetChars = 1600;
-        $overlapChars = 200;
+        $targetChars = 3200;
+        $overlapChars = 300;
         $prefix = "{$typeLabel}: {$title}\n\n";
 
         $rawParagraphs = preg_split('/\R{2,}/', trim($body)) ?: [];
@@ -27,18 +28,15 @@ class Chunker
         foreach ($paragraphs as $paragraph) {
             $pLen = mb_strlen($paragraph);
 
-            // If adding this paragraph exceeds targetChars and we already have content, flush chunk
             if ($currentLength > 0 && ($currentLength + 2 + $pLen) > $targetChars) {
                 $chunks[] = $prefix . implode("\n\n", $currentParagraphs);
 
-                // Keep trailing paragraph(s) up to ~overlapChars for the next chunk
                 $overlapParagraphs = [];
                 $overlapLen = 0;
                 for ($i = count($currentParagraphs) - 1; $i >= 0; $i--) {
                     $candidate = $currentParagraphs[$i];
                     $candidateLen = mb_strlen($candidate);
                     if ($overlapLen === 0 && $candidateLen > $overlapChars) {
-                        // Take trailing 200 chars of a long paragraph as overlap
                         $overlapParagraphs[] = '...' . mb_substr($candidate, -$overlapChars);
                         $overlapLen = $overlapChars;
                         break;

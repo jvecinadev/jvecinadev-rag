@@ -15,30 +15,44 @@ class ContentObserver
 
     public function saved(Model $model): void
     {
-        // Delete existing chunks for this record
         Chunk::query()
             ->where('chunkable_type', $model::class)
             ->where('chunkable_id', $model->getKey())
             ->delete();
 
-        $typeLabel = class_basename($model); // "Project", "Post", or "Experience"
+        $typeLabel = class_basename($model);
 
-        // Include description + highlights if present (for Projects) alongside body
         $fullTextParts = [];
+
+        // Metadata header so the LLM always knows exact links and status
+        $metaLines = ["Slug: {$model->slug}"];
+        if (isset($model->featured)) {
+            $metaLines[] = 'Featured Project: ' . ($model->featured ? 'Yes' : 'No');
+        }
+        if (!empty($model->getAttributes()['live_url'] ?? null)) {
+            $metaLines[] = 'Live URL: ' . $model->getAttributes()['live_url'];
+        } elseif (!empty($model->url)) {
+            $metaLines[] = 'URL: ' . $model->url;
+        }
+        if (!empty($model->getAttributes()['github_url'] ?? null)) {
+            $metaLines[] = 'GitHub Repository: ' . $model->getAttributes()['github_url'];
+        }
+        $fullTextParts[] = implode("\n", $metaLines);
+
         if (!empty($model->summary)) {
             $fullTextParts[] = "Summary: " . $model->summary;
         }
         if (!empty($model->description)) {
-            $fullTextParts[] = $model->description;
+            $fullTextParts[] = "Description:\n" . $model->description;
         }
         if (!empty($model->highlights) && is_array($model->highlights)) {
-            $fullTextParts[] = "Key Highlights:\n- " . implode("\n- ", $model->highlights);
+            $fullTextParts[] = "Key Engineering Highlights:\n- " . implode("\n- ", $model->highlights);
         }
         if (!empty($model->tags) && is_array($model->tags)) {
-            $fullTextParts[] = "Tech Stack / Tags: " . implode(', ', $model->tags);
+            $fullTextParts[] = "Tech Stack & Tools: " . implode(', ', $model->tags);
         }
         if (!empty($model->body)) {
-            $fullTextParts[] = $model->body;
+            $fullTextParts[] = "Deep-Dive Details:\n" . $model->body;
         }
 
         $combinedBody = implode("\n\n", $fullTextParts);
