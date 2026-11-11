@@ -15,24 +15,92 @@ class DatabaseSeeder extends Seeder
         Post::query()->delete();
         Experience::query()->delete();
 
-        // ==========================================
-        // 4 PROJECTS (matching your exact React shape + RAG body)
-        // ==========================================
+        // =====================================================================
+        // REAL PROJECTS
+        // =====================================================================
+
+        // 1. Plinth
+        Project::create([
+            'title' => 'Plinth',
+            'slug' => 'plinth',
+            'summary' => 'Multi-tenant SaaS for managing clients, projects, and tasks across workspaces with RBAC and a cached metrics dashboard.',
+            'description' => "Plinth models a production-style multi-tenant SaaS. Data is workspace-scoped and role-based access is enforced on every mutating endpoint. Inputs are validated with Zod before controllers run, and a dashboard endpoint is cached in Redis with explicit invalidation on writes.\n\nThe project is built with a layered modular backend (routes/controller/service/model/validation) and an integration test suite with Jest + Supertest.",
+            'highlights' => [
+                'Workspace-based multi-tenancy with granular roles (owner, admin, member, viewer), member invites, and seamless workspace switching.',
+                'Validation-first REST API using Zod schemas on every route and JWT authentication via httpOnly cookies.',
+                'Jest + Supertest integration test suite verifying strict tenant isolation and soft-delete behavior across workspaces.',
+                'Metrics dashboard powered by MongoDB aggregation pipelines and cached in Redis with explicit write-through invalidation.',
+                'Dockerized frontend and backend with a GitHub Actions CI pipeline running build and integration tests on every push.',
+            ],
+            'tags' => [
+                'React 19', 'TypeScript', 'Node.js', 'Express 5', 'MongoDB', 'Mongoose',
+                'Redis', 'Zod', 'JWT', 'httpOnly Cookies', 'Jest', 'Supertest',
+                'Docker', 'GitHub Actions', 'Tailwind CSS', 'Vite', 'REST API',
+            ],
+            'url' => 'https://workpilot-beige.vercel.app/',
+            'github_url' => 'https://github.com/jvecinadev/plinth',
+            'live_url' => 'https://workpilot-beige.vercel.app/',
+            'images' => [
+                'https://res.cloudinary.com/dn8e584nq/image/upload/v1787955399/plinth_cover.png',
+            ],
+            'featured' => true,
+            'body' => implode("\n\n", [
+                "Project Overview: Plinth (live at https://workpilot-beige.vercel.app/, repo at https://github.com/jvecinadev/plinth) is a featured multi-tenant SaaS platform built by John Francis Vecina for managing clients, projects, and tasks across team workspaces with strict role-based access control (RBAC) and a Redis-cached metrics dashboard.",
+                "Multi-Tenancy & RBAC Architecture: Data in Plinth is strictly workspace-scoped. Every workspace supports four roles—owner, admin, member, and viewer—along with member invitations and workspace switching. Role permissions are enforced via middleware on every mutating endpoint so one tenant can never read or mutate another workspace's resources.",
+                "Validation, Auth & Layered Backend: Structured using a clean layered modular architecture (routes, controller, service, model, validation). Every incoming request is validated with Zod schemas before controllers execute. Authentication uses JWTs stored in secure httpOnly cookies rather than localStorage to mitigate XSS risks.",
+                "Caching, Testing & CI/CD: The workspace metrics dashboard runs MongoDB aggregation pipelines and caches results in Redis with explicit cache invalidation whenever underlying clients, projects, or tasks change. Reliability is enforced with a Jest and Supertest integration suite testing tenant isolation and soft-delete behavior, running inside Docker and GitHub Actions on every push.",
+            ]),
+        ]);
+
+        // 2. Bantay PH
+        Project::create([
+            'title' => 'Bantay PH',
+            'slug' => 'bantay-ph',
+            'summary' => 'Full-stack community issue-reporting platform for barangay-level governance with RBAC and a strict verification/resolution pipeline.',
+            'description' => "Bantay PH is a full-stack community issue-reporting platform designed for barangay-level (Philippine local government) governance. Residents submit reports (potholes, flooding, broken streetlights), which move through a strict verification and resolution pipeline handled by validators and staff. The backend uses Node.js, Express, Prisma, and MySQL with a layered modular architecture, while the frontend uses React, TypeScript, Tailwind, and TanStack Query.",
+            'highlights' => [
+                'Database-driven RBAC with role-to-permission mapping resolved dynamically per request rather than hardcoded in JWT payloads.',
+                'Enforced report lifecycle state machine with transactional, race-condition-safe status updates and a complete audit trail.',
+                'Deliberate Prisma + MySQL schema design: decimal-precision geolocation coordinates, unique verification constraints per validator, and explicit cascade/restrict delete rules.',
+                'React 19 + TypeScript frontend using TanStack Query for server state, Zustand for auth state, and a Leaflet-based interactive location picker.',
+                'Layered modular Express 5 backend deployed live at bantay-ph-five.vercel.app.',
+            ],
+            'tags' => [
+                'React 19', 'TypeScript', 'Node.js', 'Express 5', 'Prisma', 'MySQL',
+                'TanStack Query', 'Zustand', 'Tailwind CSS', 'Leaflet', 'Zod',
+                'JWT', 'httpOnly Cookies', 'RBAC', 'Vite', 'REST API', 'Vercel', 'Render', 'Git',
+            ],
+            'url' => 'https://bantay-ph-five.vercel.app',
+            'github_url' => 'https://github.com/jvecinadev/bantay-ph',
+            'live_url' => 'https://bantay-ph-five.vercel.app',
+            'images' => [
+                'https://res.cloudinary.com/dn8e584nq/image/upload/v1789970739/bantaycover.png',
+            ],
+            'featured' => true,
+            'body' => implode("\n\n", [
+                "Project Overview: Bantay PH (formerly referenced as BarangayWatch, live at https://bantay-ph-five.vercel.app, repo at https://github.com/jvecinadev/bantay-ph) is a full-stack community issue-reporting platform built for Philippine local government (barangay) use. Residents report civic issues like potholes, flooding, and broken streetlights, which validators verify and barangay staff resolve through an enforced workflow.",
+                "Database-Driven RBAC & State Machine: Instead of hardcoding permissions inside a static JWT, Bantay PH resolves role-to-permission mappings from the MySQL database per request. Report transitions follow a strict lifecycle state machine wrapped in database transactions so concurrent staff actions cannot trigger race conditions or skip verification steps, leaving a complete audit trail.",
+                "Relational Schema Design (Prisma + MySQL): Engineered with deliberate relational constraints in Prisma and MySQL, including decimal-precision latitude/longitude coordinates for map pinning, unique compound constraints preventing duplicate verifications by the same validator, and explicit per-relation cascade vs. restrict delete rules.",
+                "Frontend Architecture: Built with React 19, TypeScript, and Tailwind CSS, pairing TanStack Query for cache-aware server state synchronization, Zustand for client auth state, and Leaflet for interactive geolocation map picking.",
+            ]),
+        ]);
+
+        // 3. Alaala Collections
         Project::create([
             'title' => 'Alaala Collections - Event Management Platform',
             'slug' => 'alaala-collections',
             'summary' => 'Production MERN platform for an events company: services, reservations, galleries, reviews, and a secure admin dashboard for content + operations.',
             'description' => "Alaala Collections is a full-stack event management platform built to modernize client booking and content management for a professional events business.\n\nClients can explore services, submit reservations, view galleries, and read/submit reviews. Administrators manage services, reservations, galleries, and review moderation through protected dashboard routes.",
             'highlights' => [
-                'End-to-end event reservation workflow with real-time booking status tracking and admin approval controls.',
-                'Protected administrative dashboard for managing event packages, galleries, reservations, and customer review moderation.',
-                'Cloud-hosted media gallery pipeline integrated with Cloudinary for optimized image delivery.',
-                'RESTful Node.js + Express API backed by MongoDB with role-based JWT authentication.',
-                'Deployed to production at alaalacollections.site serving real client inquiries.',
+                'End-to-end event reservation workflow with booking status tracking and administrative approval controls.',
+                'Protected admin dashboard for managing event service packages, reservations, galleries, and customer review moderation.',
+                'Cloud-hosted media gallery pipeline integrated with Cloudinary for optimized event photography delivery.',
+                'RESTful Node.js + Express API backed by MongoDB with JWT-based authentication and protected routes.',
+                'Production case study deployed live at alaalacollections.site for a real events company.',
             ],
             'tags' => [
-                'React', 'Node.js', 'Express', 'MongoDB', 'Tailwind CSS', 'JWT',
-                'Cloudinary', 'Vite', 'REST API', 'Mongoose', 'Axios', 'React Router', 'Render',
+                'React', 'Node.js', 'Express', 'MongoDB', 'Mongoose', 'Tailwind CSS',
+                'JWT', 'Cloudinary', 'Vite', 'REST API', 'Axios', 'React Router', 'Render',
             ],
             'url' => 'https://alaalacollections.site',
             'github_url' => 'https://github.com/jvecinadev/event-management-platform-case-study',
@@ -42,157 +110,134 @@ class DatabaseSeeder extends Seeder
             ],
             'featured' => true,
             'body' => implode("\n\n", [
-                "Overview & Problem: Alaala Collections is a production full-stack MERN event management platform (live at https://alaalacollections.site) built to modernize client booking, service discovery, and operations for a professional events company.",
-                "Client Features: Clients can browse curated event service packages, submit event reservations with date and guest details, explore high-resolution event galleries hosted on Cloudinary, and submit customer reviews.",
-                "Admin Dashboard & Security: Built a protected administrative dashboard using JWT authentication and Express middleware. Administrators can create and update service offerings, track and approve reservations, manage Cloudinary gallery uploads, and moderate client reviews before they appear publicly.",
-                "Tech Stack & Deployment: Engineered with React, Vite, Tailwind CSS, React Router, and Axios on the frontend, paired with a Node.js, Express, and MongoDB/Mongoose REST API on the backend.",
+                "Overview & Problem: Alaala Collections (live at https://alaalacollections.site, case study repo at https://github.com/jvecinadev/event-management-platform-case-study) is a production full-stack MERN event management platform built by John Francis Vecina to modernize client booking, service discovery, and daily operations for an events business.",
+                "Client Booking & Gallery Experience: Prospective clients can browse event packages, submit reservations with event dates and details, explore high-resolution event galleries hosted on Cloudinary, and read or submit customer reviews.",
+                "Admin Dashboard & Moderation: Administrators log in through JWT-protected dashboard routes to manage service listings, process and approve client reservations, upload gallery media, and moderate customer reviews before they go live.",
+                "Tech Stack: Built with React, Vite, Tailwind CSS, React Router, and Axios on the frontend, and Node.js, Express, MongoDB, Mongoose, JWT authentication, and Cloudinary on the backend.",
             ]),
         ]);
 
+        // 4. Vouch
         Project::create([
-            'title' => 'AI RAG Developer Portfolio',
-            'slug' => 'ai-rag-developer-portfolio',
-            'summary' => 'Full-stack portfolio featuring a citation-backed AI agent built with Laravel 13, React, PostgreSQL pgvector, and Google Gemini.',
-            'description' => "An AI-augmented developer portfolio whose centerpiece is a Retrieval-Augmented Generation (RAG) chat agent grounded strictly in my projects, engineering posts, and work experience.\n\nEvery answer cites the exact source chunks used and deterministically refuses to hallucinate when asked out-of-scope questions.",
+            'title' => 'Vouch — Local AI Security Reviewer for Git Diffs',
+            'slug' => 'vouch',
+            'summary' => 'Local, privacy-first security reviewer for git diffs combining static analysis (Bandit & Semgrep) with local AI triage and verified fix suggestions.',
+            'description' => "Vouch is a local, privacy-first security reviewer for git diffs. It scans code changes with Bandit and Semgrep, detects removed security safeguards, triages findings using a local AI model, and suggests fixes that are automatically verified.",
             'highlights' => [
-                'Custom paragraph-aware chunker (~400 tokens with 50-token overlap) prefixing source titles to every vector chunk.',
-                'Asynchronous embedding pipeline using Laravel database queues and Google Gemini text-embedding-004 (768 dimensions).',
-                'Cosine similarity vector search in PostgreSQL 16 (pgvector) with a strict 0.50 similarity floor.',
-                'Deterministic zero-hallucination guardrail that skips the LLM call entirely when retrieval returns 0 matching chunks.',
-                'Full observability logging latency, token counts, cited chunk IDs, and user thumbs-up/down feedback in rag_logs.',
+                'Privacy-first local security review pipeline that analyzes git diffs before code leaves the developer machine.',
+                'Combines deterministic static analysis scanners (Bandit and Semgrep) with local AI model triage to reduce false positives.',
+                'Detects removed security safeguards (such as deleted auth middleware or weakened validation checks) in diffs.',
+                'Generates candidate code fixes and automatically re-verifies them against the scanners.',
             ],
-            'tags' => ['Laravel 13', 'PHP 8.4', 'React 18', 'PostgreSQL 16', 'pgvector', 'Gemini API', 'Tailwind CSS', 'Vite', 'Docker'],
-            'url' => 'https://github.com/jvecinadev/jvecinadev-rag',
-            'github_url' => 'https://github.com/jvecinadev/jvecinadev-rag',
-            'live_url' => null,
-            'images' => [],
-            'featured' => true,
-            'body' => implode("\n\n", [
-                "Problem: Recruiters and engineering managers spend less than two minutes scanning a developer portfolio. Static project grids rarely answer specific technical questions about architectural trade-offs, database design, or production debugging experience.",
-                "Architecture & Decisions: Built as a monorepo with Laravel 13 at the root and a Vite + React 18 SPA in the frontend directory. Instead of introducing an external vector database like Pinecone or Qdrant, I chose PostgreSQL 16 with the pgvector extension so relational content and 768-dimensional vector embeddings live in a single transactional database at $0 hosting cost.",
-                "RAG Pipeline: Content from projects, engineering posts, and work experience is split on paragraph boundaries into ~400-token chunks with a 50-token overlap. Each chunk is prefixed with its source title for context preservation and embedded asynchronously via Laravel's database queue worker calling Google's text-embedding-004 model over raw HTTP.",
-                "Results & Guardrails: Queries use cosine similarity (1 - (embedding <=> query_vector)) with a strict 0.5 similarity floor. When no chunk passes the threshold, the controller short-circuits the LLM call entirely and returns a deterministic fallback response, guaranteeing zero hallucination on out-of-scope questions while logging latency and token metrics in rag_logs.",
-            ]),
-        ]);
-
-        Project::create([
-            'title' => 'PulseOps Real-Time Incident Tracker',
-            'slug' => 'pulseops-incident-tracker',
-            'summary' => 'MERN + TypeScript incident response dashboard supporting real-time WebSocket status streams, SLA timers, and automated postmortem generation.',
-            'description' => "Real-time incident coordination platform built for engineering teams to track outages, assign mitigation owners, monitor SLA countdowns, and export Markdown postmortems from an immutable event timeline.",
-            'highlights' => [
-                'Append-only immutable event log architecture in MongoDB tracking every incident state transition.',
-                'Sub-50ms real-time state delta broadcasting across connected responders via Socket.io.',
-                'Compound MongoDB indexing keeping dashboard p95 query latency under 18ms across 250k records.',
-                'One-click automated Markdown postmortem generator compiled directly from timeline events.',
+            'tags' => [
+                'Python', 'AI Tooling', 'Static Analysis', 'Bandit', 'Semgrep', 'Git', 'Security', 'Local LLM',
             ],
-            'tags' => ['React', 'TypeScript', 'Node.js', 'Express', 'MongoDB', 'Socket.io', 'Tailwind CSS'],
-            'url' => 'https://github.com/jvecinadev/pulseops',
-            'github_url' => 'https://github.com/jvecinadev/pulseops',
+            'url' => 'https://github.com/jvecinadev/vouch',
+            'github_url' => 'https://github.com/jvecinadev/vouch',
             'live_url' => null,
             'images' => [],
             'featured' => false,
             'body' => implode("\n\n", [
-                "Problem: Small engineering teams often coordinate outages in scattered chat threads, losing track of who owns mitigation steps, when SLA thresholds breach, and what timeline of events occurred for the postmortem.",
-                "Architecture & Decisions: Built with Node.js, Express, TypeScript, and MongoDB using an append-only event log pattern. Every state transition (investigating, identified, monitoring, resolved) is stored as an immutable IncidentEvent document rather than mutating a status column in place. Socket.io broadcasts state deltas to connected responders in under 50ms.",
-                "Database Indexing & Performance: Designed compound MongoDB indexes on (organizationId, status, createdAt) to keep dashboard p95 query latency under 18ms across 250,000 synthetic incident records. Used optimistic UI updates in React with rollback handlers when concurrent responders claim the same incident.",
-                "Results: Reduced simulated mean time to coordinate (MTTC) during team game-day drills by 40% and automated Markdown postmortem exports directly from the immutable timeline.",
+                "Project Overview: Vouch (repo at https://github.com/jvecinadev/vouch) is an AI-integrated developer security tool built in Python by John Francis Vecina. It acts as a local, privacy-first security reviewer for git diffs.",
+                "How Vouch Works: When reviewing a git diff, Vouch runs static analysis with Bandit and Semgrep, specifically watching for newly introduced vulnerabilities as well as removed safeguards in existing code. It then uses a local AI model to triage findings, explain the risk, and propose code fixes that are automatically re-verified by the scanners.",
             ]),
         ]);
 
+        // 5. jvecina.dev (RAG Portfolio & Predecessor)
         Project::create([
-            'title' => 'CartFlow Distributed Flash-Sale Checkout',
-            'slug' => 'cartflow-flash-sale-checkout',
-            'summary' => 'High-concurrency e-commerce checkout service handling inventory reservation without overselling under 500 concurrent requests per second.',
-            'description' => "High-concurrency backend service engineered to eliminate race conditions and inventory overselling during flash sales using atomic PostgreSQL locking and idempotent webhook handlers.",
+            'title' => 'jvecina.dev — AI RAG Developer Portfolio',
+            'slug' => 'jvecina-dev',
+            'summary' => 'Personal portfolio and citation-backed AI RAG agent built with Laravel 13, React, TypeScript, PostgreSQL pgvector, and Google Gemini.',
+            'description' => "Full-stack developer & AI engineer portfolio for John Francis Vecina. Features a Retrieval-Augmented Generation (RAG) chat agent grounded over real project case studies, skills, and engineering architecture using PostgreSQL pgvector and Google Gemini.",
             'highlights' => [
-                'Zero oversells across 50,000 k6 load-test requests with 500 concurrent virtual users.',
-                'Atomic PostgreSQL inventory reservation queries with 10-minute automatic expiration workers.',
-                'Idempotency key enforcement preventing duplicate charges or stock decrements on client retries.',
-                '34ms p95 checkout reservation latency running inside Dockerized PostgreSQL and Node.js.',
+                'End-to-end RAG pipeline in Laravel 13 + PHP 8.4 using raw HTTP calls to Google Gemini (gemini-embedding-001 & Gemini Flash).',
+                'Paragraph-aware chunking (~400 tokens with 50-token overlap) stored in PostgreSQL 16 with 768-dimensional pgvector embeddings.',
+                'Strict >0.50 cosine similarity threshold and deterministic fallback when retrieval returns 0 matching chunks to prevent hallucinations.',
+                'Every AI response cites numbered sources [1], [2] and logs latency, token counts, and user feedback in rag_logs.',
             ],
-            'tags' => ['Node.js', 'PostgreSQL', 'Express', 'TypeScript', 'Docker', 'k6'],
-            'url' => 'https://github.com/jvecinadev/cartflow',
-            'github_url' => 'https://github.com/jvecinadev/cartflow',
-            'live_url' => null,
+            'tags' => [
+                'Laravel', 'PHP', 'React', 'TypeScript', 'PostgreSQL', 'pgvector',
+                'Google Gemini', 'Embeddings', 'Vector Search', 'RAG Pipelines', 'Tailwind CSS', 'Vite', 'Docker',
+            ],
+            'url' => 'https://jvecina-dev.vercel.app/',
+            'github_url' => 'https://github.com/jvecinadev/jvecina.dev',
+            'live_url' => 'https://jvecina-dev.vercel.app/',
             'images' => [],
             'featured' => false,
             'body' => implode("\n\n", [
-                "Problem: Naive checkouts that read stock count in application memory and then decrement it suffer from race conditions during flash sales, resulting in oversold inventory and failed payment reconciliations.",
-                "Architecture & Decisions: Migrated the inventory reservation path from optimistic application-level checks to atomic PostgreSQL UPDATE statements with row-level locking (UPDATE products SET stock = stock - $1 WHERE id = $2 AND stock >= $1 RETURNING stock). Reservations expire automatically after 10 minutes via a background reaper worker if payment webhook confirmation does not arrive.",
-                "Idempotency & Reliability: Implemented idempotency keys on POST /checkout and payment webhook endpoints so network retries from mobile clients or Stripe webhooks never double-charge or double-decrement inventory.",
-                "Results: Load-tested with k6 at 500 virtual users hammering a 100-item SKU pool. Achieved zero oversells across 50,000 total requests with a p95 checkout reservation latency of 34ms.",
+                "Overview: jvecina.dev (predecessor live at https://jvecina-dev.vercel.app/, repo at https://github.com/jvecinadev/jvecina.dev) is John Francis Vecina's portfolio site, upgraded with a Laravel 13 + PostgreSQL pgvector + Google Gemini RAG agent.",
+                "RAG Architecture: Portfolio content is split into paragraph-aware ~400-token chunks with 50-token overlap, prefixed with source titles, and embedded into 768-dimensional vectors using Google Gemini's embedding API. User questions are embedded and matched via pgvector cosine similarity (<=>) with a 0.50 floor, ensuring every answer cites its sources and refuses to hallucinate.",
             ]),
         ]);
 
-        // ==========================================
-        // 3 POSTS
-        // ==========================================
-        Post::create([
-            'title' => 'Why I Chose PostgreSQL pgvector Over a Dedicated Vector DB',
-            'slug' => 'why-pgvector-over-dedicated-vector-db',
-            'summary' => 'When building RAG over tens of thousands of chunks, adding Pinecone or Qdrant introduces network hops and sync bugs you do not need.',
-            'tags' => ['PostgreSQL', 'pgvector', 'RAG', 'Architecture'],
-            'url' => '/work/ai-rag-developer-portfolio',
-            'body' => implode("\n\n", [
-                "When developers build their first Retrieval-Augmented Generation (RAG) system, the default tutorial stack often includes a separate cloud vector database alongside their primary relational database. While dedicated vector engines shine at tens of millions of vectors, they introduce dual-write consistency bugs for small-to-medium workloads.",
-                "With pgvector inside PostgreSQL 16, your source records and their 768-dimensional embeddings live in the exact same database. When a project or blog post is deleted, cascading deletes or model observers clean up its chunks atomically without orphaned vectors lingering in a third-party SaaS index.",
-                "Using the cosine distance operator (<=>), a dataset of several thousand portfolio chunks scans in single-digit milliseconds even without approximate HNSW indexing, keeping infrastructure simple, local-Docker friendly, and 100% free.",
-            ]),
-        ]);
-
-        Post::create([
-            'title' => 'Lessons from Shipping Alaala Collections to Production',
-            'slug' => 'shipping-alaala-collections-to-production',
-            'summary' => 'How I structured reservation workflows, Cloudinary media pipelines, and admin moderation for a live MERN events business.',
-            'tags' => ['MERN', 'React', 'Node.js', 'MongoDB', 'Cloudinary'],
-            'url' => 'https://alaalacollections.site',
-            'body' => implode("\n\n", [
-                "Building Alaala Collections for a real events business required designing for two very different users: prospective clients browsing event packages on mobile devices, and non-technical administrators managing bookings and galleries daily.",
-                "To keep page loads fast on image-heavy event galleries, I integrated Cloudinary with responsive image transformations so high-resolution event photography never blocks initial React rendering.",
-                "On the operations side, separating public client submissions (reservations and customer reviews) from public display via an admin moderation state machine prevented spam bookings and gave the business full control over live site content.",
-            ]),
-        ]);
-
-        Post::create([
-            'title' => 'Preventing Hallucinations in Portfolio Chatbots',
-            'slug' => 'preventing-hallucinations-in-portfolio-chatbots',
-            'summary' => 'How similarity thresholds, deterministic short-circuiting, and strict citation prompts stop LLMs from inventing skills you do not have.',
-            'tags' => ['AI', 'RAG', 'Gemini', 'Prompt Engineering'],
-            'url' => null,
-            'body' => implode("\n\n", [
-                "The worst failure mode for a portfolio AI agent is fabricating experience—claiming you worked at a company you never joined or built systems in Rust when your background is TypeScript, React, Node.js, and Laravel.",
-                "Prompting alone is not enough to stop hallucinations when retrieval returns weak matches. Our RAG pipeline enforces defense in depth at two layers: first, the SQL query filters out any chunk with cosine similarity below 0.50. If zero chunks pass that gate, the backend skips the Gemini API call completely and returns a canned 'I don't have that information in my portfolio' response.",
-                "Second, when relevant chunks are found, each chunk is numbered [1], [2], etc., with its source title prefixed inside the chunk text. The system instruction requires Gemini to answer strictly from the provided blocks and cite [1], [2] inline so every claim can be verified with a single click.",
-            ]),
-        ]);
-
-        // ==========================================
-        // 2 EXPERIENCES
-        // ==========================================
+        // =====================================================================
+        // EXPERIENCES (Identity, Background, Skills Inventory & Positioning)
+        // =====================================================================
         Experience::create([
-            'title' => 'Full-Stack Developer — J. F Tech & Freelance Engineering (2024 – Present)',
-            'slug' => 'fullstack-developer-jf-tech',
-            'summary' => 'Designed and shipped production full-stack web applications including Alaala Collections using React, TypeScript, Node.js, Express, MongoDB, PostgreSQL, and Laravel.',
-            'tags' => ['React', 'TypeScript', 'Node.js', 'Express', 'MongoDB', 'Laravel', 'PostgreSQL'],
-            'url' => 'https://alaalacollections.site',
+            'title' => 'John Francis Vecina (jvecina.dev / jvecinadev) — Full-Stack & AI Engineer',
+            'slug' => 'john-francis-vecina-profile',
+            'summary' => 'Full-Stack & AI Engineer based in Manila, Philippines. Open to work for full-stack roles. Specializes in MERN + TypeScript, Prisma/MySQL, Laravel + PostgreSQL/pgvector, and RAG pipelines.',
+            'tags' => [
+                'React', 'TypeScript', 'Node.js', 'Express', 'MongoDB', 'PostgreSQL',
+                'pgvector', 'Prisma', 'MySQL', 'Redis', 'Laravel', 'Google Gemini', 'RAG Pipelines',
+            ],
+            'url' => 'https://jvecina-dev.vercel.app/',
             'body' => implode("\n\n", [
-                "Role Overview: Full-stack developer building and deploying production web platforms, REST APIs, and AI-augmented applications across the MERN stack (MongoDB, Express, React, Node.js, TypeScript) and Laravel + PostgreSQL.",
-                "Key Contributions: Delivered the Alaala Collections Event Management Platform (https://alaalacollections.site) featuring service catalogs, reservation workflows, Cloudinary gallery management, review moderation, and a JWT-protected admin dashboard.",
-                "AI & Systems Engineering: Architected end-to-end Retrieval-Augmented Generation (RAG) pipelines using PostgreSQL pgvector and Google Gemini API with asynchronous background embedding workers and strict citation grounding.",
+                "Identity & Positioning: John Francis Vecina (handle: jvecina.dev / jvecinadev) is a Full-Stack & AI Engineer (Full-stack developer) based in Manila, Philippines. Status: Open to work for full-stack engineering roles.",
+                "Background: IT student and full-stack developer with hands-on experience building production-style web applications end to end—spanning responsive React/TypeScript UIs, validation-first REST APIs, relational and NoSQL database design, multi-tenant application architecture, AI/RAG pipelines, and cloud deployment.",
+                "Primary Stack: MERN + TypeScript (MongoDB, Express, React, Node.js, TypeScript), with recent production and capstone work spanning Prisma, MySQL, Redis, Laravel 13, PostgreSQL 16 with pgvector, and Google Gemini RAG systems.",
+                "Complete Technical Skills Inventory by Group:\n"
+                . "- Frontend: React, TypeScript, JavaScript, Tailwind CSS, Vite\n"
+                . "- Backend: Node.js, Express, Zod, JWT, httpOnly Cookies, REST APIs\n"
+                . "- Data & Caching: MongoDB, PostgreSQL, Redis, Prisma, MySQL, pgvector\n"
+                . "- Quality & Infrastructure: Jest, Supertest, Docker, GitHub Actions\n"
+                . "- Workflow: Git, GitHub, Postman, Figma\n"
+                . "- Deployment: Vercel, Render, MongoDB Atlas\n"
+                . "- AI / RAG (Differentiator): Laravel, Google Gemini, Embeddings, Vector Search, RAG Pipelines",
             ]),
         ]);
 
         Experience::create([
-            'title' => 'Software Engineering Student Developer (2022 – 2024)',
-            'slug' => 'software-engineering-student-developer',
-            'summary' => 'Built full-stack web applications, high-concurrency backend services, and responsive React interfaces across software engineering projects.',
-            'tags' => ['JavaScript', 'TypeScript', 'React', 'Node.js', 'SQL', 'Git'],
-            'url' => null,
+            'title' => 'Full-Stack Software Engineering & Production Case Studies',
+            'slug' => 'fullstack-engineering-experience',
+            'summary' => 'Built and deployed Plinth (multi-tenant SaaS), Bantay PH (LGU governance platform), Alaala Collections (live events platform), and Vouch (AI git diff security reviewer).',
+            'tags' => [
+                'Multi-Tenancy', 'RBAC', 'Zod', 'Jest', 'Supertest', 'Docker', 'GitHub Actions', 'Cloudinary',
+            ],
+            'url' => 'https://github.com/jvecinadev',
             'body' => implode("\n\n", [
-                "Role Overview: Collaborated in agile engineering teams delivering full-stack web platforms, relational and document database schemas, and automated CI/CD workflows.",
-                "Key Contributions: Implemented high-concurrency checkout services in Node.js and PostgreSQL using row-level locking and idempotency keys, and built mobile-first React + Tailwind CSS applications.",
-                "Tooling & Practices: Standardized Git workflows, Docker Compose local development environments, and REST API documentation across team repositories.",
+                "Production & Capstone Engineering: Designed, tested, and shipped multiple end-to-end applications solving real operational problems: Alaala Collections (live event management platform at alaalacollections.site), Plinth (workspace-scoped multi-tenant SaaS with Redis caching and Jest/Supertest integration tests), Bantay PH (barangay issue-reporting system with database-driven RBAC and Prisma/MySQL state machines), and Vouch (Python + local AI security reviewer for git diffs).",
+                "Engineering Discipline: Emphasizes layered backend architecture (routes, controllers, services, models, validation), strict tenant isolation, transactional database integrity, and automated CI testing with Docker and GitHub Actions.",
+            ]),
+        ]);
+
+        // =====================================================================
+        // POSTS (Engineering Themes: "How I Build" Story)
+        // =====================================================================
+        Post::create([
+            'title' => 'How I Build: Auth Flows, Validation-First APIs, Tenant Isolation & Testing',
+            'slug' => 'how-i-build-engineering-themes',
+            'summary' => 'The core engineering themes across my projects: httpOnly cookie JWT auth, Zod validation, database-driven RBAC, Jest/Supertest integration testing, and Docker CI.',
+            'tags' => ['Architecture', 'JWT', 'Zod', 'RBAC', 'Multi-Tenancy', 'Jest', 'Supertest', 'Docker'],
+            'url' => 'https://github.com/jvecinadev',
+            'body' => implode("\n\n", [
+                "John Francis Vecina's core engineering philosophy ('How I Build') centers on five recurring themes applied across Plinth, Bantay PH, and Alaala Collections:",
+                "1. Auth Flows — JWT via httpOnly Cookies & Protected Routes: Instead of storing sensitive tokens in localStorage where XSS scripts can read them, authentication flows issue JWTs inside secure httpOnly cookies paired with strict route-protection middleware on both the API and React frontend.",
+                "2. Validation-First APIs — Zod Schemas & Consistent Error Responses: Every mutating API route validates request bodies, query parameters, and route params against strict Zod schemas before any controller or service logic executes, returning predictable, structured validation error responses.",
+                "3. Tenant Isolation & Database-Driven RBAC: In multi-tenant and civic apps like Plinth and Bantay PH, access control goes beyond simple admin booleans. Plinth scopes every query to the active workspace across owner, admin, member, and viewer roles, while Bantay PH resolves role-to-permission mappings dynamically from the database on every request.",
+                "4. Testing Mindset & Deployment-Ready Infrastructure: Where reliability and security boundaries matter—such as cross-workspace tenant isolation and soft deletes in Plinth—integration test suites using Jest and Supertest verify actual HTTP and database behavior inside Dockerized environments wired to GitHub Actions CI.",
+            ]),
+        ]);
+
+        Post::create([
+            'title' => 'Why I Built My Portfolio RAG Agent with Laravel, PostgreSQL pgvector, and Gemini',
+            'slug' => 'why-laravel-pgvector-gemini-rag',
+            'summary' => 'Keeping relational portfolio data and 768-dimensional vector embeddings in one PostgreSQL database with strict citation grounding.',
+            'tags' => ['Laravel', 'PostgreSQL', 'pgvector', 'Google Gemini', 'RAG Pipelines', 'Vector Search'],
+            'url' => '/work/jvecina-dev',
+            'body' => implode("\n\n", [
+                "As a Full-Stack & AI Engineer strong in MERN and TypeScript, building this RAG portfolio backend in Laravel 13 and PostgreSQL 16 with pgvector demonstrated cross-stack versatility while keeping vector search and relational data unified in a single database.",
+                "Each project, experience entry, and engineering post is chunked into ~400-token segments with 50-token overlap, prefixed with its source title, and embedded via Google Gemini's embedding model. At query time, cosine similarity search retrieves the top 5 chunks above 0.50 similarity and requires the model to cite [1], [2] inline or say 'I don't know' when asked out-of-scope questions.",
             ]),
         ]);
     }
