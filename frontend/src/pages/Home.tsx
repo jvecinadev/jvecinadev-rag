@@ -195,7 +195,7 @@ export default function Home() {
             <div className="relative aspect-4/3 w-full overflow-hidden rounded-lg border border-border bg-surface2">
               {!portraitError && (
                 <img
-                  src={`${import.meta.env.BASE_URL}portrait.jpg`}
+                  src={`${import.meta.env.BASE_URL}portrait.png`}
                   alt="John Francis Vecina"
                   width={600}
                   height={450}
