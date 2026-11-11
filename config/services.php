@@ -26,9 +26,14 @@ return [
     'gemini' => [
         'key' => env('GEMINI_API_KEY'),
         'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
-        'chat_model' => env('GEMINI_CHAT_MODEL', 'gemini-3.8-flash'),
-        'embedding_model' => env('GEMINI_EMBEDDING_MODEL', 'text-embedding-004'),
+        'chat_model' => env('GEMINI_CHAT_MODEL', 'gemini-2.5-flash-lite'),
+        'embedding_model' => env('GEMINI_EMBEDDING_MODEL', 'gemini-embedding-001'),
         'dimensions' => (int) env('EMBEDDING_DIMENSIONS', 768),
+    ],
+
+    'groq' => [
+        'key' => env('GROQ_API_KEY'),
+        'chat_model' => env('GROQ_CHAT_MODEL', 'llama-3.3-70b-versatile'),
     ],
 
 ];
