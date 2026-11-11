@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 use Throwable;
 
 class ChatController extends Controller
@@ -28,7 +29,7 @@ class ChatController extends Controller
             // Hard guardrail: if 0 chunks pass the >0.5 similarity floor, skip the LLM entirely
             if (empty($chunks)) {
                 $latencyMs = (int) round((microtime(true) - $startTime) * 1000);
-                $cannedAnswer = "I don't have that information in my portfolio. I can answer questions about my projects (like Alaala Collections, PulseOps, and CartFlow), my full-stack MERN and Laravel + PostgreSQL engineering experience, or how this RAG system was built.";
+                $cannedAnswer = "I don't have that information in my portfolio. I can answer questions about John Francis Vecina's projects (Plinth, Bantay PH, Alaala Collections, and Vouch), his full-stack MERN + TypeScript and Laravel + PostgreSQL/pgvector skills, or his engineering approach to RBAC, auth, and testing.";
 
                 $ragLog = RagLog::create([
                     'question' => $question,
@@ -69,96 +70,31 @@ class ChatController extends Controller
 
             $contextText = implode("\n\n---\n\n", $contextBlocks);
 
-            $systemInstruction = "Answer ONLY from the context below. "
+            $systemInstruction = "You are the AI portfolio agent for John Francis Vecina (jvecina.dev), a Full-Stack & AI Engineer in Manila, Philippines. "
+                . "Answer ONLY from the context below. "
                 . "If the context does not contain the answer, say you don't have that information and suggest what you do cover. "
-                . "Cite sources as [1], [2] matching the context order. "
-                . "Keep your tone concise, helpful, and direct.";
+                . "Cite sources inline as [1], [2] matching the context numbers. "
+                . "Keep your tone concise, technical, and direct.";
 
             $userPrompt = "CONTEXT:\n{$contextText}\n\nUSER QUESTION:\n{$question}";
 
-            $baseUrl = rtrim((string) config('services.gemini.base_url'), '/');
-            $primaryModel = (string) config('services.gemini.chat_model', 'gemini-3.7-flash');
-            $key = (string) config('services.gemini.key');
+            // 1. Try Groq first if GROQ_API_KEY is configured (typically ~400-700ms)
+            $llmResult = $this->generateWithGroqOrGemini($systemInstruction, $userPrompt);
 
-            // Try primary model first; fall back automatically if Google reports 503 high demand
-            $candidateModels = array_values(array_unique([
-                $primaryModel,
-                'gemini-3.7-flash',
-                'gemini-3.6-flash',
-                'gemini-3.5-flash',
-                'gemini-3.5-flash-lite',
-                'gemini-3.8-flash',
-            ]));
-
-            $payload = [
-                'system_instruction' => [
-                    'parts' => [
-                        ['text' => $systemInstruction],
-                    ],
-                ],
-                'contents' => [
-                    [
-                        'role' => 'user',
-                        'parts' => [
-                            ['text' => $userPrompt],
-                        ],
-                    ],
-                ],
-                'generationConfig' => [
-                    'temperature' => 0.2,
-                ],
-            ];
-
-            $response = null;
-            $lastErrorBody = '';
-            $lastStatus = 500;
-
-            foreach ($candidateModels as $model) {
-                $url = "{$baseUrl}/models/{$model}:generateContent?key={$key}";
-                $res = Http::timeout(25)->post($url, $payload);
-
-                if ($res->successful()) {
-                    $response = $res;
-                    break;
-                }
-
-                $lastStatus = $res->status();
-                $lastErrorBody = $res->body();
-
-                // Retry next model on 503 (overloaded), 429 (rate limit), or 404 (unavailable)
-                if (!in_array($lastStatus, [404, 429, 503], true)) {
-                    break;
-                }
-            }
-
-            if (!$response || !$response->successful()) {
-                throw new \RuntimeException(
-                    "Gemini generateContent failed with HTTP {$lastStatus}: {$lastErrorBody}"
-                );
-            }
-
-            $answer = (string) data_get(
-                $response->json(),
-                'candidates.0.content.parts.0.text',
-                "I don't have that information in my portfolio."
-            );
-
-            $promptTokens = (int) data_get($response->json(), 'usageMetadata.promptTokenCount', 0);
-            $completionTokens = (int) data_get($response->json(), 'usageMetadata.candidatesTokenCount', 0);
             $latencyMs = (int) round((microtime(true) - $startTime) * 1000);
 
             $ragLog = RagLog::create([
                 'question' => $question,
-                'answer' => trim($answer),
+                'answer' => $llmResult['answer'],
                 'chunk_ids' => $chunkIds,
                 'latency_ms' => $latencyMs,
-                'prompt_tokens' => $promptTokens,
-                'completion_tokens' => $completionTokens,
+                'prompt_tokens' => $llmResult['prompt_tokens'],
+                'completion_tokens' => $llmResult['completion_tokens'],
             ]);
 
             return response()->json([
                 'log_id' => $ragLog->id,
-                'answer' => trim($answer),
+                'answer' => $llmResult['answer'],
                 'sources' => $sources,
                 'latency_ms' => $latencyMs,
                 'no_match' => false,
@@ -183,6 +119,106 @@ class ChatController extends Controller
                 'error' => 'Something went wrong while generating an answer. Please try again.',
             ], 500);
         }
+    }
+
+    /**
+     * Calls Groq (if GROQ_API_KEY is set) for sub-second responses,
+     * otherwise falls back to lightweight Gemini Flash-Lite models.
+     *
+     * @return array{answer: string, prompt_tokens: int, completion_tokens: int}
+     */
+    protected function generateWithGroqOrGemini(string $systemInstruction, string $userPrompt): array
+    {
+        $groqKey = trim((string) config('services.groq.key'));
+        $groqModel = (string) config('services.groq.chat_model', 'llama-3.3-70b-versatile');
+
+        if ($groqKey !== '') {
+            $groqRes = Http::withToken($groqKey)
+                ->timeout(15)
+                ->post('https://api.groq.com/openai/v1/chat/completions', [
+                    'model' => $groqModel,
+                    'messages' => [
+                        ['role' => 'system', 'content' => $systemInstruction],
+                        ['role' => 'user', 'content' => $userPrompt],
+                    ],
+                    'temperature' => 0.2,
+                ]);
+
+            if ($groqRes->successful()) {
+                return [
+                    'answer' => trim((string) data_get($groqRes->json(), 'choices.0.message.content', '')),
+                    'prompt_tokens' => (int) data_get($groqRes->json(), 'usage.prompt_tokens', 0),
+                    'completion_tokens' => (int) data_get($groqRes->json(), 'usage.completion_tokens', 0),
+                ];
+            }
+
+            Log::warning('Groq call failed, falling back to Gemini', [
+                'status' => $groqRes->status(),
+                'body' => $groqRes->body(),
+            ]);
+        }
+
+        // Gemini fallback: prioritize fast "-lite" models that don't suffer 503 overload
+        $baseUrl = rtrim((string) config('services.gemini.base_url'), '/');
+        $primaryModel = (string) config('services.gemini.chat_model', 'gemini-2.5-flash-lite');
+        $key = (string) config('services.gemini.key');
+
+        $candidateModels = array_values(array_unique([
+            $primaryModel,
+            'gemini-2.5-flash-lite',
+            'gemini-3.5-flash-lite',
+            'gemini-3.1-flash-lite',
+            'gemini-flash-lite-latest',
+            'gemini-flash-latest',
+        ]));
+
+        $payload = [
+            'system_instruction' => [
+                'parts' => [
+                    ['text' => $systemInstruction],
+                ],
+            ],
+            'contents' => [
+                [
+                    'role' => 'user',
+                    'parts' => [
+                        ['text' => $userPrompt],
+                    ],
+                ],
+            ],
+            'generationConfig' => [
+                'temperature' => 0.2,
+            ],
+        ];
+
+        $lastStatus = 500;
+        $lastErrorBody = '';
+
+        foreach ($candidateModels as $model) {
+            $url = "{$baseUrl}/models/{$model}:generateContent?key={$key}";
+            $res = Http::timeout(12)->post($url, $payload);
+
+            if ($res->successful()) {
+                $answer = (string) data_get(
+                    $res->json(),
+                    'candidates.0.content.parts.0.text',
+                    "I don't have that information in my portfolio."
+                );
+
+                return [
+                    'answer' => trim($answer),
+                    'prompt_tokens' => (int) data_get($res->json(), 'usageMetadata.promptTokenCount', 0),
+                    'completion_tokens' => (int) data_get($res->json(), 'usageMetadata.candidatesTokenCount', 0),
+                ];
+            }
+
+            $lastStatus = $res->status();
+            $lastErrorBody = $res->body();
+        }
+
+        throw new RuntimeException(
+            "All LLM providers failed. Last Gemini HTTP {$lastStatus}: {$lastErrorBody}"
+        );
     }
 
     public function feedback(Request $request): JsonResponse

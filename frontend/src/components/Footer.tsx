@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 export function Footer() {
   return (
     <footer className="border-t border-border bg-ink">
-      <div className="mx-auto max-w-[1200px] px-4 py-10 sm:px-6">
+      <div className="mx-auto max-w-300 px-4 py-10 sm:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-xs text-textFaint">
             <span className="text-textMuted">John Francis Vecina</span>
@@ -14,7 +14,7 @@ export function Footer() {
               contact@jvecina.dev
             </a>
             <a
-              href="https://github.com"
+              href="https://github.com/jvecinadev"
               target="_blank"
               rel="noreferrer"
               className="transition-colors duration-150 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
