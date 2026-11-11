@@ -135,7 +135,9 @@ class DatabaseSeeder extends Seeder
             'url' => 'https://github.com/jvecinadev/vouch',
             'github_url' => 'https://github.com/jvecinadev/vouch',
             'live_url' => null,
-            'images' => [],
+            'images' => [
+                'https://res.cloudinary.com/dn8e584nq/image/upload/v1794394708/Vouch_Secure_Code_Review_Poster.png'
+            ],
             'featured' => false,
             'body' => implode("\n\n", [
                 "Project Overview: Vouch (repo at https://github.com/jvecinadev/vouch) is an AI-integrated developer security tool built in Python by John Francis Vecina. It acts as a local, privacy-first security reviewer for git diffs.",
