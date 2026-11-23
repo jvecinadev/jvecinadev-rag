@@ -8,10 +8,10 @@ export function Footer() {
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-xs text-textFaint">
             <span className="text-textMuted">John Francis Vecina</span>
             <a
-              href="mailto:contact@jvecina.dev"
+              href="mailto:johnvecina640@gmail.com"
               className="transition-colors duration-150 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
             >
-              contact@jvecina.dev
+              johnvecina640@gmail.com
             </a>
             <a
               href="https://github.com/jvecinadev"
@@ -22,7 +22,7 @@ export function Footer() {
               github
             </a>
             <a
-              href="https://linkedin.com"
+              href="https://linkedin.com/in/jvecinadev/"
               target="_blank"
               rel="noreferrer"
               className="transition-colors duration-150 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-lg"
