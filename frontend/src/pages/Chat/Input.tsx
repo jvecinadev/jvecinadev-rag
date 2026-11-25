@@ -1,5 +1,4 @@
-import React, { useRef, useEffect } from 'react';
-import { Button } from '../../components/Button';
+import { type KeyboardEvent, useEffect, useRef } from 'react';
 
 export interface InputProps {
   value: string;
@@ -9,8 +8,8 @@ export interface InputProps {
   isSending: boolean;
 }
 
+const MIN_LENGTH = 2;
 const MAX_LENGTH = 1000;
-const COUNTER_THRESHOLD = 850;
 
 export function Input({
   value,
@@ -20,100 +19,84 @@ export function Input({
   isSending,
 }: InputProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const prevSendingRef = useRef<boolean>(isSending);
-
-  // Keep focus in the textarea after sending completes or is aborted
-  useEffect(() => {
-    if (prevSendingRef.current && !isSending) {
-      textareaRef.current?.focus();
-    }
-    prevSendingRef.current = isSending;
-  }, [isSending]);
 
   const trimmedLength = value.trim().length;
-  const isValid = trimmedLength >= 2 && value.length <= MAX_LENGTH;
-  const showCounter = value.length >= COUNTER_THRESHOLD;
+  const isValid = trimmedLength >= MIN_LENGTH && trimmedLength <= MAX_LENGTH;
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      if (!isSending && isValid) {
+  // Auto-resize textarea up to 120px so it never takes over the viewport
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  }, [value]);
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (isValid && !isSending) {
         onSubmit();
-        requestAnimationFrame(() => {
-          textareaRef.current?.focus();
-        });
       }
     }
   };
 
-  const handleFormSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!isSending && isValid) {
-      onSubmit();
-      requestAnimationFrame(() => {
-        textareaRef.current?.focus();
-      });
-    }
-  };
-
   return (
-    <div className="border-t border-border bg-ink/95 backdrop-blur">
-      <form
-        onSubmit={handleFormSubmit}
-        className="mx-auto max-w-[72ch] px-4 py-4 sm:px-0"
-      >
-        <div className="flex items-end gap-3 rounded-lg border border-border bg-surface p-2.5 focus-within:border-accent/60 focus-within:ring-2 focus-within:ring-accent/40">
-          <label htmlFor="chat-question-input" className="sr-only">
-            Ask a question about my projects or experience
-          </label>
+    <div className="border-t border-border bg-ink/95 px-4 py-3 backdrop-blur-md">
+      <div className="mx-auto max-w-3xl">
+        <div className="flex items-end gap-2 rounded-xl border border-border bg-surface px-3.5 py-2 transition-colors focus-within:border-accent/60">
           <textarea
-            id="chat-question-input"
             ref={textareaRef}
-            rows={2}
+            rows={1}
             value={value}
-            disabled={isSending}
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about my projects, stack, or experience…"
-            className="w-full resize-none bg-transparent font-sans text-sm text-text placeholder:text-textFaint focus:outline-none disabled:opacity-50"
+            placeholder="Ask about Plinth, Bantay PH, Vouch, tech stack, or availability..."
+            maxLength={MAX_LENGTH}
+            aria-label="Ask a question about John Francis Vecina's work"
+            className="max-h-30 min-h-6 flex-1 resize-none bg-transparent py-0.5 font-sans text-sm text-text placeholder:text-textFaint focus:outline-none"
           />
 
           <div className="flex shrink-0 items-center gap-2">
+            {value.length > 700 && (
+              <span
+                className={`font-mono text-[11px] ${
+                  trimmedLength > MAX_LENGTH ? 'text-red-400' : 'text-textFaint'
+                }`}
+              >
+                {trimmedLength}/{MAX_LENGTH}
+              </span>
+            )}
+
             {isSending ? (
-              <Button
-                variant="ghost"
+              <button
                 type="button"
                 onClick={onAbort}
-                aria-label="Stop generating response"
+                className="cursor-pointer rounded-lg border border-border bg-ink px-3 py-1.5 font-mono text-xs font-medium text-textMuted transition-colors hover:border-textMuted hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40"
               >
                 Stop
-              </Button>
+              </button>
             ) : (
-              <Button
-                variant="primary"
-                type="submit"
+              <button
+                type="button"
                 disabled={!isValid}
-                aria-label="Send question"
+                onClick={onSubmit}
+                className="cursor-pointer rounded-lg bg-accent px-3.5 py-1.5 font-sans text-xs font-medium text-ink transition-opacity duration-150 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Ask →
-              </Button>
+              </button>
             )}
           </div>
         </div>
 
-        <div className="mt-2 flex items-center justify-between font-mono text-xs text-textFaint">
-          <span>Enter to send · Shift+Enter for newline</span>
-          {showCounter && (
-            <span
-              className={
-                value.length > MAX_LENGTH ? 'text-accent' : 'text-textFaint'
-              }
-            >
-              {value.length}/{MAX_LENGTH}
-            </span>
-          )}
+        <div className="mt-1.5 flex items-center justify-between px-1">
+          <p className="font-mono text-[11px] text-textFaint">
+            Grounded strictly in documented projects &amp; experience
+          </p>
+          <p className="hidden font-mono text-[11px] text-textFaint sm:block">
+            Enter to send · Shift+Enter for newline
+          </p>
         </div>
-      </form>
+      </div>
     </div>
   );
 }

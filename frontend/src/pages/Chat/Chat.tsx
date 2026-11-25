@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { api } from '../../api';
 import type {
@@ -10,7 +10,6 @@ import type {
   HealthResponse,
 } from '../../types/api';
 import { usePageTitle } from '../../lib/usePageTitle';
-import { SectionLabel } from '../../components/SectionLabel';
 import { type ChatTurn, Message } from './Message';
 import { SuggestedQuestions } from './SuggestedQuestions';
 import { Input } from './Input';
@@ -23,11 +22,33 @@ interface ValidationErrorResponse {
   error?: string;
 }
 
+const QUICK_TOPICS: ReadonlyArray<{ label: string; question: string }> = [
+  {
+    label: 'Plinth SaaS',
+    question: 'How does Plinth enforce tenant isolation and 4-tier RBAC?',
+  },
+  {
+    label: 'Bantay PH',
+    question:
+      'How does Bantay PH prevent race conditions and stale JWT permissions?',
+  },
+  {
+    label: 'Vouch AI',
+    question: 'How does Vouch review git diffs locally and verify patches?',
+  },
+  {
+    label: 'Availability & Fit',
+    question:
+      'What roles and freelance client projects are you currently available for?',
+  },
+];
+
 const FOLLOW_UP_QUESTIONS = [
-  'What is Alaala Collections and what tech stack does it use?',
-  'Which of your projects use React?',
-  "What's your experience with Laravel and PostgreSQL?",
-  'How was this RAG system built?',
+  'How does Plinth enforce tenant isolation and 4-tier RBAC?',
+  'How does Bantay PH prevent race conditions and stale JWT permissions?',
+  'How does Vouch review git diffs locally and verify patches?',
+  'What is your experience with FastAPI, PostgreSQL, and pgvector?',
+  'What roles and freelance client projects are you currently available for?',
 ] as const;
 
 function extractErrorMessage(err: unknown): string {
@@ -62,22 +83,64 @@ export default function Chat() {
   const [isSending, setIsSending] = useState<boolean>(false);
   const [isSlowRequest, setIsSlowRequest] = useState<boolean>(false);
   const [serverReady, setServerReady] = useState<boolean | null>(null);
+  const [showScrollBottom, setShowScrollBottom] = useState<boolean>(false);
 
   const hasAutoSentRef = useRef<boolean>(false);
   const isSendingRef = useRef<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const activeTurnIdRef = useRef<string | null>(null);
-  const bottomAnchorRef = useRef<HTMLDivElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const scrollToBottom = useCallback(() => {
-    bottomAnchorRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // Lock outer document scroll while on /chat so the global footer never pulls in or shakes the screen
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+    };
   }, []);
+
+  // Scroll ONLY the internal chat container
+  const scrollChatToBottom = useCallback(
+    (behavior: ScrollBehavior = 'smooth') => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+      requestAnimationFrame(() => {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior,
+        });
+      });
+    },
+    []
+  );
+
+  const handleScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container || turns.length === 0) {
+      setShowScrollBottom(false);
+      return;
+    }
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+    setShowScrollBottom(distanceFromBottom > 140);
+  }, [turns.length]);
+
+  const lastTurnStatus = turns[turns.length - 1]?.status;
 
   useEffect(() => {
     if (turns.length > 0) {
-      scrollToBottom();
+      scrollChatToBottom('smooth');
     }
-  }, [turns, isSlowRequest, scrollToBottom]);
+  }, [turns.length, lastTurnStatus, scrollChatToBottom]);
 
   // Pre-warm the Render backend on mount and check health
   useEffect(() => {
@@ -268,6 +331,7 @@ export default function Chat() {
     isSendingRef.current = false;
     setIsSending(false);
     setTurns([]);
+    setShowScrollBottom(false);
   }, []);
 
   const handleFeedback = useCallback(
@@ -295,159 +359,211 @@ export default function Chat() {
     );
     return FOLLOW_UP_QUESTIONS.filter(
       (q) => !asked.has(q.toLowerCase())
-    );
+    ).slice(0, 3);
   }, [turns]);
 
   return (
-    <section className="flex h-[calc(100dvh-3.5rem)] flex-col">
-      {/* Compact Header Bar when conversation is active */}
+    <section
+      aria-label="Portfolio AI Assistant"
+      className="fixed inset-0 pt-14 z-30 flex flex-col overflow-hidden bg-ink"
+    >
+      {/* Active Session Top Bar (only shown once conversation starts) */}
       {turns.length > 0 && (
-        <div className="border-b border-border bg-ink/90 px-4 py-2.5">
-          <div className="mx-auto flex max-w-[72ch] items-center justify-between">
-            <div className="flex items-center gap-2.5">
+        <div className="shrink-0 border-b border-border bg-surface/50 px-4 py-2 backdrop-blur-sm">
+          <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2">
               <span
-                className={`h-1.5 w-1.5 rounded-full ${
+                className={`h-2 w-2 shrink-0 rounded-full ${
                   serverReady === false ? 'bg-textFaint' : 'bg-accent'
                 }`}
                 aria-hidden="true"
               />
-              <span className="font-sans text-xs font-medium text-textMuted">
-                Portfolio Q&A
+              <span className="truncate font-sans text-xs font-medium text-text">
+                Portfolio Assistant
               </span>
               <span className="font-mono text-[11px] text-textFaint">
-                · {turns.length} {turns.length === 1 ? 'question' : 'questions'}
+                · {turns.length} {turns.length === 1 ? 'query' : 'queries'}
               </span>
             </div>
 
-            <button
-              type="button"
-              onClick={handleClearChat}
-              className="font-mono text-xs text-textMuted transition-colors duration-150 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40 rounded-sm px-1.5 py-0.5 cursor-pointer"
-            >
-              Clear
-            </button>
+            <div className="flex shrink-0 items-center gap-2.5">
+              <Link
+                to="/work"
+                className="hidden font-mono text-[11px] text-textMuted transition-colors hover:text-text sm:inline"
+              >
+                Browse projects
+              </Link>
+              <button
+                type="button"
+                onClick={handleClearChat}
+                className="cursor-pointer rounded-md border border-border bg-surface px-2.5 py-1 font-mono text-[11px] text-textMuted transition-colors duration-150 hover:border-textMuted hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40"
+              >
+                Reset chat
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Scrollable Message Log */}
+      {/* Main Viewport Area */}
       <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
         role="log"
         aria-live="polite"
-        aria-label="Conversation with portfolio agent"
-        className="flex-1 overflow-y-auto px-4 py-8 sm:py-12"
+        aria-label="Conversation with portfolio assistant"
+        className="relative flex flex-1 min-h-0 flex-col overflow-y-auto overscroll-contain px-4"
       >
-        <div className="mx-auto max-w-[72ch] space-y-8">
-          {turns.length === 0 ? (
-            <div className="space-y-8 pt-2 sm:pt-6">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <SectionLabel index="03" label="ASK" />
-                  <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-textFaint">
-                    <span
-                      className={`h-1.5 w-1.5 rounded-full ${
-                        serverReady === null
-                          ? 'bg-textFaint animate-pulse'
-                          : serverReady
-                            ? 'bg-accent'
-                            : 'bg-textFaint'
-                      }`}
-                      aria-hidden="true"
-                    />
+        {turns.length === 0 ? (
+          /* Empty State: Vertically centered, compact, fits in 1 screen without overlapping Input */
+          <div className="mx-auto my-auto w-full max-w-3xl py-4 sm:py-6">
+            <div className="space-y-5 sm:space-y-6">
+              {/* Header Block */}
+              <div className="space-y-2.5">
+                <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/70 px-3 py-1">
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      serverReady === null
+                        ? 'animate-pulse bg-textFaint'
+                        : serverReady
+                          ? 'bg-accent'
+                          : 'bg-textFaint'
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <span className="font-mono text-[11px] text-textMuted">
                     {serverReady === null
-                      ? 'Connecting...'
+                      ? 'Connecting to RAG index...'
                       : serverReady
-                        ? 'Ready'
-                        : 'Offline'}
+                        ? 'Grounded RAG Index Ready'
+                        : 'RAG Index Standby'}
+                  </span>
+                  <span className="hidden font-mono text-[11px] text-textFaint sm:inline">
+                    · PostgreSQL + pgvector
                   </span>
                 </div>
 
-                <h1 className="font-sans text-2xl font-semibold tracking-tight text-text sm:text-3xl">
-                  Ask my portfolio anything.
+                <h1 className="font-sans text-xl font-semibold tracking-tight text-text sm:text-3xl">
+                  Ask about my systems, stack, or experience.
                 </h1>
-                <p className="font-sans text-sm leading-relaxed text-textMuted sm:text-base">
-                  Answers are generated strictly from my projects, case studies,
-                  and work experience. Every claim links directly to its source.
+                <p className="max-w-2xl font-sans text-xs leading-relaxed text-textMuted sm:text-sm">
+                  Answers are generated strictly from my documented projects,
+                  architecture notes, and work history, with source links on
+                  every response.
                 </p>
               </div>
 
-              <div className="space-y-3">
-                <p className="font-mono text-xs text-textFaint">
-                  SUGGESTED QUESTIONS
-                </p>
+              {/* Quick Topic Pills */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="mr-1 font-mono text-[11px] text-textFaint">
+                  Quick ask:
+                </span>
+                {QUICK_TOPICS.map((topic) => (
+                  <button
+                    key={topic.label}
+                    type="button"
+                    disabled={isSending}
+                    onClick={() => handleSelectSuggested(topic.question)}
+                    className="cursor-pointer rounded-full border border-border bg-surface/60 px-2.5 py-1 font-mono text-[11px] text-textMuted transition-colors duration-150 hover:border-accent/50 hover:bg-surface hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {topic.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Symmetrical 2x2 Starter Cards */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[11px] uppercase tracking-wider text-textFaint">
+                    Suggested Prompts
+                  </span>
+                  <a
+                    href="mailto:johnvecina640@gmail.com"
+                    className="font-mono text-[11px] text-textMuted transition-colors hover:text-accent"
+                  >
+                    Direct email →
+                  </a>
+                </div>
                 <SuggestedQuestions
                   onSelect={handleSelectSuggested}
                   disabled={isSending}
                 />
               </div>
-
-              {/* Subtle Grounding Note */}
-              <div className="rounded-lg border border-border bg-surface/60 px-4 py-3">
-                <p className="font-sans text-xs leading-relaxed text-textFaint">
-                  Grounded via PostgreSQL + pgvector retrieval. If a question
-                  falls outside my documented work, the assistant will let you
-                  know rather than guessing.
-                </p>
-              </div>
             </div>
-          ) : (
-            <>
-              <div className="space-y-8">
-                {turns.map((turn) => (
-                  <Message
-                    key={turn.id}
-                    turn={turn}
-                    onRetry={handleRetry}
-                    onFeedback={handleFeedback}
-                    onSelectQuestion={handleSelectSuggested}
-                    isBusy={isSending}
-                  />
-                ))}
-              </div>
+          </div>
+        ) : (
+          /* Active Conversation Log */
+          <div className="mx-auto w-full max-w-3xl space-y-8 py-6 sm:py-8">
+            <div className="space-y-8">
+              {turns.map((turn) => (
+                <Message
+                  key={turn.id}
+                  turn={turn}
+                  onRetry={handleRetry}
+                  onFeedback={handleFeedback}
+                  onSelectQuestion={handleSelectSuggested}
+                  isBusy={isSending}
+                />
+              ))}
+            </div>
 
-              {/* Render Cold-Start Notice */}
-              {isSending && isSlowRequest && (
-                <p className="font-mono text-xs text-textFaint animate-pulse">
-                  Waking up the server — first response after inactivity can
-                  take ~20 seconds...
+            {/* Render Cold-Start Notice */}
+            {isSending && isSlowRequest && (
+              <div className="rounded-lg border border-border bg-surface/60 px-4 py-3">
+                <p className="font-mono text-xs text-textMuted animate-pulse">
+                  Waking up the backend service. The first response after
+                  inactivity can take around 20 seconds...
                 </p>
-              )}
+              </div>
+            )}
 
-              {/* Follow-up Suggestions */}
-              {!isSending && remainingQuestions.length > 0 && (
-                <div className="space-y-2.5 border-t border-border/60 pt-6">
-                  <p className="font-mono text-[11px] text-textFaint">
-                    FOLLOW-UP QUESTIONS
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {remainingQuestions.map((question) => (
-                      <button
-                        key={question}
-                        type="button"
-                        onClick={() => handleSelectSuggested(question)}
-                        className="rounded-md border border-border bg-surface px-3 py-1.5 text-left font-sans text-xs text-textMuted transition-colors duration-150 hover:border-textMuted hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40 cursor-pointer"
-                      >
-                        {question}
-                      </button>
-                    ))}
-                  </div>
+            {/* Follow-up Suggestions */}
+            {!isSending && remainingQuestions.length > 0 && (
+              <div className="space-y-2.5 border-t border-border/60 pt-5 pb-2">
+                <p className="font-mono text-[11px] uppercase tracking-wider text-textFaint">
+                  Follow-up questions
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {remainingQuestions.map((question) => (
+                    <button
+                      key={question}
+                      type="button"
+                      onClick={() => handleSelectSuggested(question)}
+                      className="cursor-pointer rounded-lg border border-border bg-surface px-3 py-1.5 text-left font-sans text-xs text-textMuted transition-colors duration-150 hover:border-accent/50 hover:text-text focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    >
+                      {question}
+                    </button>
+                  ))}
                 </div>
-              )}
-            </>
-          )}
+              </div>
+            )}
+          </div>
+        )}
 
-          <div ref={bottomAnchorRef} />
-        </div>
+        {/* Floating Scroll-to-Bottom Button when scrolled up */}
+        {showScrollBottom && turns.length > 0 && (
+          <div className="sticky bottom-3 mx-auto flex justify-center pointer-events-none">
+            <button
+              type="button"
+              onClick={() => scrollChatToBottom('smooth')}
+              className="pointer-events-auto cursor-pointer inline-flex items-center gap-1.5 rounded-full border border-border bg-surface/95 px-3 py-1 font-mono text-[11px] text-text shadow-md backdrop-blur-sm transition-colors hover:border-accent/60 hover:text-accent"
+            >
+              ↓ Latest response
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Pinned Input Bar */}
-      <Input
-        value={inputValue}
-        onChange={setInputValue}
-        onSubmit={handleSendFromInput}
-        onAbort={handleAbort}
-        isSending={isSending}
-      />
+      {/* Dedicated Bottom Composer Dock (never overlaps content) */}
+      <div className="shrink-0">
+        <Input
+          value={inputValue}
+          onChange={setInputValue}
+          onSubmit={handleSendFromInput}
+          onAbort={handleAbort}
+          isSending={isSending}
+        />
+      </div>
     </section>
   );
 }
