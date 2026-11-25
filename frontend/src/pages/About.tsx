@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import type { Experience } from '../types/api';
@@ -157,6 +157,314 @@ const MASTER_STACK: readonly StackGroup[] = [
   },
 ] as const;
 
+interface ContributionDay {
+  date: string;
+  count: number;
+  level: 0 | 1 | 2 | 3 | 4;
+}
+
+interface ContributionsApiResponse {
+  total?: {
+    lastYear?: number;
+  };
+  contributions?: ContributionDay[];
+}
+
+const MONTH_NAMES = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+] as const;
+
+function levelClassName(level: 0 | 1 | 2 | 3 | 4): string {
+  switch (level) {
+    case 1:
+      return 'bg-accent/25 border-accent/30';
+    case 2:
+      return 'bg-accent/50 border-accent/50';
+    case 3:
+      return 'bg-accent/75 border-accent/70';
+    case 4:
+      return 'bg-accent border-accent';
+    default:
+      return 'bg-ink border-border/80';
+  }
+}
+
+function formatContributionDate(dateStr: string): string {
+  const parsed = new Date(`${dateStr}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return dateStr;
+  return parsed.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+function GitHubActivityCard() {
+  const [days, setDays] = useState<ContributionDay[]>([]);
+  const [totalLastYear, setTotalLastYear] = useState<number | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [failed, setFailed] = useState<boolean>(false);
+  const [hoveredDay, setHoveredDay] = useState<ContributionDay | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+
+    fetch(
+      'https://github-contributions-api.jogruber.de/v4/jvecinadev?y=last',
+      { signal: controller.signal }
+    )
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load contributions');
+        return res.json() as Promise<ContributionsApiResponse>;
+      })
+      .then((data) => {
+        if (!active) return;
+        const list = Array.isArray(data.contributions)
+          ? data.contributions
+          : [];
+        setDays(list);
+        setTotalLastYear(
+          typeof data.total?.lastYear === 'number'
+            ? data.total.lastYear
+            : list.reduce((sum, item) => sum + item.count, 0)
+        );
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setFailed(true);
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, []);
+
+  const { weeks, monthHeaders, activeDays, maxDaily } = useMemo(() => {
+    if (days.length === 0) {
+      return {
+        weeks: [] as Array<Array<ContributionDay | null>>,
+        monthHeaders: [] as Array<{ label: string; colIndex: number }>,
+        activeDays: 0,
+        maxDaily: 0,
+      };
+    }
+
+    const groupedWeeks: Array<Array<ContributionDay | null>> = [];
+    let currentWeek: Array<ContributionDay | null> = new Array(7).fill(null);
+
+    let activeCount = 0;
+    let peakCount = 0;
+
+    days.forEach((day, idx) => {
+      if (day.count > 0) activeCount += 1;
+      if (day.count > peakCount) peakCount = day.count;
+
+      const dateObj = new Date(`${day.date}T00:00:00Z`);
+      const dayOfWeek = dateObj.getUTCDay(); // 0 (Sun) - 6 (Sat)
+
+      currentWeek[dayOfWeek] = day;
+
+      if (dayOfWeek === 6 || idx === days.length - 1) {
+        groupedWeeks.push(currentWeek);
+        currentWeek = new Array(7).fill(null);
+      }
+    });
+
+    const headers: Array<{ label: string; colIndex: number }> = [];
+    let lastMonth = -1;
+    let lastColIndex = -4;
+
+    groupedWeeks.forEach((week, colIndex) => {
+      const firstValidDay = week.find((d) => d !== null);
+      if (!firstValidDay) return;
+      const dateObj = new Date(`${firstValidDay.date}T00:00:00Z`);
+      const month = dateObj.getUTCMonth();
+
+      if (month !== lastMonth && colIndex - lastColIndex >= 3) {
+        headers.push({
+          label: MONTH_NAMES[month],
+          colIndex,
+        });
+        lastMonth = month;
+        lastColIndex = colIndex;
+      }
+    });
+
+    return {
+      weeks: groupedWeeks,
+      monthHeaders: headers,
+      activeDays: activeCount,
+      maxDaily: peakCount,
+    };
+  }, [days]);
+
+  return (
+    <div className="rounded-lg border border-border bg-surface p-5 sm:p-6 space-y-5">
+      {/* Top Bar: Identity + Stats + Interactive Hover Readout */}
+      <div className="flex flex-col justify-between gap-3 border-b border-border pb-4 sm:flex-row sm:items-center">
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="inline-flex items-center gap-2 font-sans text-base font-semibold text-text">
+              <span className="h-2 w-2 rounded-full bg-accent" />
+              {totalLastYear !== null
+                ? `${totalLastYear.toLocaleString()} contributions in the last year`
+                : 'GitHub Contribution Activity'}
+            </span>
+            <a
+              href="https://github.com/jvecinadev"
+              target="_blank"
+              rel="noreferrer"
+              className="rounded border border-border bg-ink px-2 py-0.5 font-mono text-xs text-accent transition-colors hover:border-accent/50"
+            >
+              @jvecinadev ↗
+            </a>
+          </div>
+          <p className="font-mono text-xs text-textMuted">
+            {hoveredDay
+              ? `${hoveredDay.count} ${
+                  hoveredDay.count === 1 ? 'contribution' : 'contributions'
+                } on ${formatContributionDate(hoveredDay.date)}`
+              : 'Live commit and repository activity across public and private engineering work'}
+          </p>
+        </div>
+
+        {/* Summary Pills */}
+        {!loading && !failed && days.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded border border-border bg-ink px-2.5 py-1 font-mono text-xs text-textMuted">
+              Active days: <strong className="text-text">{activeDays}</strong>
+            </span>
+            <span className="rounded border border-border bg-ink px-2.5 py-1 font-mono text-xs text-textMuted">
+              Peak day: <strong className="text-text">{maxDaily}</strong>
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Heatmap Body */}
+      {loading ? (
+        <div className="space-y-2 py-2">
+          <div className="grid grid-flow-col auto-cols-fr gap-1 overflow-hidden">
+            {Array.from({ length: 52 }).map((_, weekIdx) => (
+              <div key={weekIdx} className="grid grid-rows-7 gap-1">
+                {Array.from({ length: 7 }).map((__, dayIdx) => (
+                  <div
+                    key={dayIdx}
+                    className="h-3 w-3 rounded-xs bg-ink animate-pulse"
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : failed || weeks.length === 0 ? (
+        <div className="flex flex-col items-start justify-between gap-3 rounded-lg border border-border bg-ink p-4 sm:flex-row sm:items-center">
+          <p className="font-sans text-sm text-textMuted">
+            View my full repository history, commit graph, and active branches
+            directly on GitHub.
+          </p>
+          <Button
+            variant="ghost"
+            href="https://github.com/jvecinadev"
+            className="shrink-0"
+          >
+            Open GitHub Profile ↗
+          </Button>
+        </div>
+      ) : (
+        <div className="overflow-x-auto pb-1">
+          <div className="min-w-170 space-y-1.5">
+            {/* Month Labels */}
+            <div
+              className="grid gap-1 font-mono text-[10px] text-textFaint"
+              style={{
+                gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))`,
+              }}
+            >
+              {weeks.map((_, colIdx) => {
+                const header = monthHeaders.find((h) => h.colIndex === colIdx);
+                return (
+                  <span key={colIdx} className="h-3.5 leading-none">
+                    {header ? header.label : ''}
+                  </span>
+                );
+              })}
+            </div>
+
+            {/* 52-Week x 7-Day Grid */}
+            <div
+              className="grid gap-1"
+              style={{
+                gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))`,
+              }}
+              onMouseLeave={() => setHoveredDay(null)}
+            >
+              {weeks.map((week, weekIdx) => (
+                <div key={weekIdx} className="grid grid-rows-7 gap-1">
+                  {week.map((day, dayIdx) =>
+                    day ? (
+                      <button
+                        key={day.date}
+                        type="button"
+                        onMouseEnter={() => setHoveredDay(day)}
+                        onFocus={() => setHoveredDay(day)}
+                        aria-label={`${day.count} contributions on ${formatContributionDate(
+                          day.date
+                        )}`}
+                        className={`aspect-square w-full min-h-2.75 min-w-2.75 rounded-xs border transition-transform duration-100 hover:scale-125 focus:scale-125 focus:outline-none ${levelClassName(
+                          day.level
+                        )}`}
+                      />
+                    ) : (
+                      <span
+                        key={`empty-${weekIdx}-${dayIdx}`}
+                        className="aspect-square w-full min-h-2.75 min-w-2.75 rounded-xs bg-transparent"
+                      />
+                    )
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Legend & Direct Repo Link */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-1 font-mono text-[11px] text-textFaint">
+        <span>Synced from github.com/jvecinadev</span>
+
+        <div className="flex items-center gap-1.5">
+          <span>Less</span>
+          {([0, 1, 2, 3, 4] as const).map((lvl) => (
+            <span
+              key={lvl}
+              aria-hidden="true"
+              className={`h-3 w-3 rounded-xs border ${levelClassName(lvl)}`}
+            />
+          ))}
+          <span>More</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function About() {
   usePageTitle('About');
 
@@ -187,7 +495,7 @@ export default function About() {
                 John Francis Vecina
               </h1>
               <p className="font-mono text-xs uppercase tracking-wider text-accent">
-                Full Stack Developer &nbsp;·&nbsp; Backend AI Engineer
+                Full Stack Developer · Backend AI Engineer
               </p>
             </div>
 
@@ -479,7 +787,19 @@ export default function About() {
         </div>
       </section>
 
-      {/* 3. ENGINEERING STANDARDS (Symmetrical 2x2 Grid) */}
+      {/* 3. LIVE GITHUB CONTRIBUTION ACTIVITY */}
+      <section className="border-t border-border pt-14 sm:pt-16 space-y-6">
+        <div className="max-w-[64ch] space-y-2">
+          <SectionLabel label="CODING CONSISTENCY" />
+          <h2 className="font-sans text-2xl font-semibold tracking-tight text-text sm:text-3xl">
+            Consistent shipping across repositories.
+          </h2>
+        </div>
+
+        <GitHubActivityCard />
+      </section>
+
+      {/* 4. ENGINEERING STANDARDS (Symmetrical 2x2 Grid) */}
       <section className="border-t border-border pt-14 sm:pt-16 space-y-8">
         <div className="max-w-[64ch] space-y-2">
           <SectionLabel label="HOW I BUILD" />
@@ -529,7 +849,7 @@ export default function About() {
         </div>
       </section>
 
-      {/* 4. MASTER TECH STACK (Symmetrical 2x2 Grid) */}
+      {/* 5. MASTER TECH STACK (Symmetrical 2x2 Grid) */}
       <section className="border-t border-border pt-14 sm:pt-16 space-y-8">
         <div className="max-w-[64ch] space-y-2">
           <SectionLabel label="TECHNICAL STACK" />
@@ -563,7 +883,7 @@ export default function About() {
         </div>
       </section>
 
-      {/* 5. CLOSING CTA (Mandatory Entry Point #5) */}
+      {/* 6. CLOSING CTA (Mandatory Entry Point #5) */}
       <section className="border-t border-border pt-12">
         <div className="flex flex-col justify-between gap-6 rounded-lg border border-border bg-surface p-6 sm:flex-row sm:items-center sm:p-8">
           <div className="space-y-1.5 max-w-[56ch]">
