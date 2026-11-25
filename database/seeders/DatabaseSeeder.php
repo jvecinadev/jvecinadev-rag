@@ -16,26 +16,26 @@ class DatabaseSeeder extends Seeder
         Experience::query()->delete();
 
         // =====================================================================
-        // REAL PROJECTS
+        // 5. PROJECTS (Top 4 Featured + Alaala Collections demoted)
         // =====================================================================
 
-        // 1. Plinth
+        // Project 1: Plinth
         Project::create([
             'title' => 'Plinth',
             'slug' => 'plinth',
-            'summary' => 'Multi-tenant SaaS for managing clients, projects, and tasks across workspaces with RBAC and a cached metrics dashboard.',
-            'description' => "Plinth models a production-style multi-tenant SaaS. Data is workspace-scoped and role-based access is enforced on every mutating endpoint. Inputs are validated with Zod before controllers run, and a dashboard endpoint is cached in Redis with explicit invalidation on writes.\n\nThe project is built with a layered modular backend (routes/controller/service/model/validation) and an integration test suite with Jest + Supertest.",
+            'summary' => 'Multi-tenant B2B SaaS for managing clients, projects, and tasks across workspaces with 4-tier RBAC and a Redis-cached metrics dashboard.',
+            'description' => "Plinth models a production-style multi-tenant B2B SaaS. Data is workspace-scoped with tenant isolation enforced at the database query level, and 4-tier role-based access control (owner, admin, member, viewer) is enforced on every mutating endpoint. Inputs are validated with Zod before controllers run, and the metrics dashboard is cached in Redis with explicit write invalidation.\n\nBuilt with a layered modular backend (routes/controller/service/model/validation) and verified by a Jest + Supertest integration test suite.",
             'highlights' => [
-                'Workspace-based multi-tenancy with granular roles (owner, admin, member, viewer), member invites, and seamless workspace switching.',
-                'Validation-first REST API using Zod schemas on every route and JWT authentication via httpOnly cookies.',
-                'Jest + Supertest integration test suite verifying strict tenant isolation and soft-delete behavior across workspaces.',
-                'Metrics dashboard powered by MongoDB aggregation pipelines and cached in Redis with explicit write-through invalidation.',
-                'Dockerized frontend and backend with a GitHub Actions CI pipeline running build and integration tests on every push.',
+                'Tenant isolation enforced directly at the database query level across workspaces.',
+                '4-tier RBAC (owner, admin, member, viewer) enforced on every mutating endpoint, with member invites and workspace switching.',
+                'Validation-first REST API using Zod schemas and JWT authentication via httpOnly cookies.',
+                'Workspace metrics dashboard backed by MongoDB aggregation pipelines and cached in Redis with explicit invalidation on writes.',
+                'Integration test suite with Jest + Supertest covering tenant isolation and soft-delete behavior inside Docker + GitHub Actions CI.',
             ],
             'tags' => [
-                'React 19', 'TypeScript', 'Node.js', 'Express 5', 'MongoDB', 'Mongoose',
-                'Redis', 'Zod', 'JWT', 'httpOnly Cookies', 'Jest', 'Supertest',
-                'Docker', 'GitHub Actions', 'Tailwind CSS', 'Vite', 'REST API',
+                'React 19', 'TypeScript', 'Node.js', 'Express 5', 'MongoDB', 'Redis',
+                'Zod', 'Docker', 'Jest', 'Supertest', 'JWT', 'httpOnly Cookies',
+                'GitHub Actions', 'Tailwind CSS', 'Vite',
             ],
             'url' => 'https://workpilot-beige.vercel.app/',
             'github_url' => 'https://github.com/jvecinadev/plinth',
@@ -45,30 +45,28 @@ class DatabaseSeeder extends Seeder
             ],
             'featured' => true,
             'body' => implode("\n\n", [
-                "Project Overview: Plinth (live at https://workpilot-beige.vercel.app/, repo at https://github.com/jvecinadev/plinth) is a featured multi-tenant SaaS platform built by John Francis Vecina for managing clients, projects, and tasks across team workspaces with strict role-based access control (RBAC) and a Redis-cached metrics dashboard.",
-                "Multi-Tenancy & RBAC Architecture: Data in Plinth is strictly workspace-scoped. Every workspace supports four roles—owner, admin, member, and viewer—along with member invitations and workspace switching. Role permissions are enforced via middleware on every mutating endpoint so one tenant can never read or mutate another workspace's resources.",
-                "Validation, Auth & Layered Backend: Structured using a clean layered modular architecture (routes, controller, service, model, validation). Every incoming request is validated with Zod schemas before controllers execute. Authentication uses JWTs stored in secure httpOnly cookies rather than localStorage to mitigate XSS risks.",
-                "Caching, Testing & CI/CD: The workspace metrics dashboard runs MongoDB aggregation pipelines and caches results in Redis with explicit cache invalidation whenever underlying clients, projects, or tasks change. Reliability is enforced with a Jest and Supertest integration suite testing tenant isolation and soft-delete behavior, running inside Docker and GitHub Actions on every push.",
+                "What It Is: Plinth (live at https://workpilot-beige.vercel.app/, GitHub: https://github.com/jvecinadev/plinth) is a multi-tenant B2B SaaS platform built by John Francis Vecina for managing clients, projects, and tasks across team workspaces.",
+                "Engineering Proof & Architecture: Tenant isolation is enforced at the database query level so workspace data never leaks across tenants. Every mutating endpoint enforces a 4-tier RBAC model (owner, admin, member, viewer) and validates inputs with Zod schemas before controllers run. Authentication uses JWTs in httpOnly cookies.",
+                "Caching & Verification: The workspace metrics dashboard uses MongoDB aggregation pipelines cached in Redis with explicit cache invalidation on writes. Cross-tenant isolation and soft-delete behavior are verified with an automated Jest + Supertest integration test suite running in Docker and GitHub Actions.",
             ]),
         ]);
 
-        // 2. Bantay PH
+        // Project 2: Bantay PH
         Project::create([
             'title' => 'Bantay PH',
             'slug' => 'bantay-ph',
-            'summary' => 'Full-stack community issue-reporting platform for barangay-level governance with RBAC and a strict verification/resolution pipeline.',
-            'description' => "Bantay PH is a full-stack community issue-reporting platform designed for barangay-level (Philippine local government) governance. Residents submit reports (potholes, flooding, broken streetlights), which move through a strict verification and resolution pipeline handled by validators and staff. The backend uses Node.js, Express, Prisma, and MySQL with a layered modular architecture, while the frontend uses React, TypeScript, Tailwind, and TanStack Query.",
+            'summary' => 'Civic issue-reporting platform for barangay-level governance with per-request DB RBAC and race-condition-safe verification workflows.',
+            'description' => "Bantay PH is a full-stack community issue-reporting platform designed for barangay-level (Philippine local government) governance. Residents submit civic reports (potholes, flooding, broken streetlights), which move through a strict verification and resolution pipeline handled by validators and staff. The backend uses Node.js, Express 5, Prisma, and MySQL with a layered modular architecture, while the frontend uses React 19, TypeScript, Tailwind CSS, TanStack Query, and Zustand.",
             'highlights' => [
-                'Database-driven RBAC with role-to-permission mapping resolved dynamically per request rather than hardcoded in JWT payloads.',
-                'Enforced report lifecycle state machine with transactional, race-condition-safe status updates and a complete audit trail.',
-                'Deliberate Prisma + MySQL schema design: decimal-precision geolocation coordinates, unique verification constraints per validator, and explicit cascade/restrict delete rules.',
-                'React 19 + TypeScript frontend using TanStack Query for server state, Zustand for auth state, and a Leaflet-based interactive location picker.',
-                'Layered modular Express 5 backend deployed live at bantay-ph-five.vercel.app.',
+                'Per-request database permission resolution (role-to-permission mapping resolved dynamically from MySQL rather than relying on stale JWT roles).',
+                'Race-condition-safe transactional state machine enforcing the report verification and resolution lifecycle.',
+                'Complete status history and immutable audit trails for every civic report transition.',
+                'Prisma + MySQL schema with decimal-precision geolocation coordinates, unique validator verification constraints, and explicit cascade/restrict rules.',
+                'React 19 + TypeScript frontend powered by TanStack Query, Zustand, and a Leaflet interactive map picker.',
             ],
             'tags' => [
                 'React 19', 'TypeScript', 'Node.js', 'Express 5', 'Prisma', 'MySQL',
-                'TanStack Query', 'Zustand', 'Tailwind CSS', 'Leaflet', 'Zod',
-                'JWT', 'httpOnly Cookies', 'RBAC', 'Vite', 'REST API', 'Vercel', 'Render', 'Git',
+                'TanStack Query', 'Zustand', 'Tailwind CSS', 'Leaflet', 'Zod', 'RBAC', 'Vercel',
             ],
             'url' => 'https://bantay-ph-five.vercel.app',
             'github_url' => 'https://github.com/jvecinadev/bantay-ph',
@@ -78,29 +76,78 @@ class DatabaseSeeder extends Seeder
             ],
             'featured' => true,
             'body' => implode("\n\n", [
-                "Project Overview: Bantay PH (formerly referenced as BarangayWatch, live at https://bantay-ph-five.vercel.app, repo at https://github.com/jvecinadev/bantay-ph) is a full-stack community issue-reporting platform built for Philippine local government (barangay) use. Residents report civic issues like potholes, flooding, and broken streetlights, which validators verify and barangay staff resolve through an enforced workflow.",
-                "Database-Driven RBAC & State Machine: Instead of hardcoding permissions inside a static JWT, Bantay PH resolves role-to-permission mappings from the MySQL database per request. Report transitions follow a strict lifecycle state machine wrapped in database transactions so concurrent staff actions cannot trigger race conditions or skip verification steps, leaving a complete audit trail.",
-                "Relational Schema Design (Prisma + MySQL): Engineered with deliberate relational constraints in Prisma and MySQL, including decimal-precision latitude/longitude coordinates for map pinning, unique compound constraints preventing duplicate verifications by the same validator, and explicit per-relation cascade vs. restrict delete rules.",
-                "Frontend Architecture: Built with React 19, TypeScript, and Tailwind CSS, pairing TanStack Query for cache-aware server state synchronization, Zustand for client auth state, and Leaflet for interactive geolocation map picking.",
+                "What It Is: Bantay PH (live at https://bantay-ph-five.vercel.app, GitHub: https://github.com/jvecinadev/bantay-ph) is a civic issue-reporting platform for barangay-level governance in the Philippines where residents submit issues, validators verify them, and staff resolve them.",
+                "Engineering Proof & Architecture: Enforces per-request database permission resolution so role-to-permission changes take effect immediately without stale JWT roles. Report status transitions run inside a race-condition-safe transactional state machine in MySQL + Prisma with complete history and audit trails.",
+                "Schema & Frontend State: The Prisma schema enforces decimal-precision map coordinates, unique verification per validator, and deliberate cascade/restrict rules. The React 19 + TypeScript frontend pairs TanStack Query for server state, Zustand for auth state, and Leaflet for map pinning.",
             ]),
         ]);
 
-        // 3. Alaala Collections
+        // Project 3: Vouch
         Project::create([
-            'title' => 'Alaala Collections - Event Management Platform',
-            'slug' => 'alaala-collections',
-            'summary' => 'Production MERN platform for an events company: services, reservations, galleries, reviews, and a secure admin dashboard for content + operations.',
-            'description' => "Alaala Collections is a full-stack event management platform built to modernize client booking and content management for a professional events business.\n\nClients can explore services, submit reservations, view galleries, and read/submit reviews. Administrators manage services, reservations, galleries, and review moderation through protected dashboard routes.",
+            'title' => 'Vouch',
+            'slug' => 'vouch',
+            'summary' => 'Local, privacy-first AI security reviewer for git diffs using Bandit, Semgrep, tree-sitter, and Ollama with automated patch verification and SARIF export.',
+            'description' => "Vouch is a local, privacy-first AI security reviewer for git diffs. It scans code changes with Bandit, Semgrep, and tree-sitter AST analysis, detects removed security safeguards, triages findings using a local AI model via Ollama, and verifies candidate patches through an automated apply → parse → confirm pipeline before exporting SARIF reports.",
             'highlights' => [
-                'End-to-end event reservation workflow with booking status tracking and administrative approval controls.',
-                'Protected admin dashboard for managing event service packages, reservations, galleries, and customer review moderation.',
-                'Cloud-hosted media gallery pipeline integrated with Cloudinary for optimized event photography delivery.',
-                'RESTful Node.js + Express API backed by MongoDB with JWT-based authentication and protected routes.',
-                'Production case study deployed live at alaalacollections.site for a real events company.',
+                'Detects both newly introduced vulnerabilities and removed security safeguards in git diffs using Bandit, Semgrep, and tree-sitter.',
+                'Privacy-first local AI triage powered by Ollama so proprietary source code never leaves the developer machine.',
+                'Automated patch verification loop (apply → parse → confirm) that validates AI-suggested fixes against syntax and security scanners.',
+                'Exports standardized SARIF reports for seamless integration with GitHub Code Scanning and CI workflows.',
+                'Interactive Gradio UI and CLI tested with pytest.',
             ],
             'tags' => [
-                'React', 'Node.js', 'Express', 'MongoDB', 'Mongoose', 'Tailwind CSS',
-                'JWT', 'Cloudinary', 'Vite', 'REST API', 'Axios', 'React Router', 'Render',
+                'Python', 'Gradio', 'Ollama', 'Bandit', 'Semgrep', 'tree-sitter', 'Git', 'pytest', 'SARIF',
+            ],
+            'url' => 'https://github.com/jvecinadev/vouch',
+            'github_url' => 'https://github.com/jvecinadev/vouch',
+            'live_url' => null,
+            'images' => [],
+            'featured' => true,
+            'body' => implode("\n\n", [
+                "What It Is: Vouch (GitHub: https://github.com/jvecinadev/vouch) is a local, privacy-first AI security reviewer for git diffs built in Python by John Francis Vecina.",
+                "Engineering Proof & Pipeline: Vouch combines static analysis (Bandit, Semgrep) and AST parsing (tree-sitter) to detect vulnerabilities and removed safeguards in git diffs. It triages findings using a local LLM via Ollama and runs an automated patch verification loop (apply → parse → confirm) to guarantee suggested fixes compile and resolve the finding. Supports SARIF export and includes a Gradio interface and pytest test suite.",
+            ]),
+        ]);
+
+        // Project 4: jvecina.dev
+        Project::create([
+            'title' => 'jvecina.dev',
+            'slug' => 'jvecina-dev',
+            'summary' => 'Full-stack developer portfolio with grounded RAG AI agent powered by PostgreSQL pgvector, Gemini embeddings, and live GitHub README sync.',
+            'description' => "Full-stack portfolio and grounded Retrieval-Augmented Generation (RAG) AI agent for John Francis Vecina. Combines PostgreSQL pgvector and Google Gemini embeddings for citation-backed Q&A over projects and experience, with build-time project synchronization and live GitHub README fetching to prevent documentation drift.",
+            'highlights' => [
+                'Grounded RAG pipeline using PostgreSQL 16 pgvector (768-dim cosine similarity search) and Google Gemini embeddings.',
+                'Build step syncs project metadata and pulls live GitHub README content to prevent portfolio drift.',
+                'Strict >0.50 cosine similarity threshold and deterministic fallback when retrieval returns 0 matching chunks.',
+                'Full request telemetry in rag_logs tracking latency, token consumption, cited chunks, and user feedback.',
+            ],
+            'tags' => [
+                'PostgreSQL', 'pgvector', 'Laravel', 'FastAPI', 'Python', 'Gemini API', 'React 19', 'TypeScript', 'Tailwind CSS',
+            ],
+            'url' => 'https://jvecinadev-rag.vercel.app/',
+            'github_url' => 'https://github.com/jvecinadev/jvecina.dev',
+            'live_url' => 'https://jvecinadev-rag.vercel.app/',
+            'images' => [],
+            'featured' => true,
+            'body' => implode("\n\n", [
+                "What It Is: jvecina.dev (live at https://jvecinadev-rag.vercel.app/, GitHub: https://github.com/jvecinadev/jvecina.dev) is John Francis Vecina's developer portfolio featuring a grounded RAG AI agent.",
+                "Engineering Proof: Uses PostgreSQL pgvector and Gemini embeddings (768 dimensions) for semantic retrieval with inline [1], [2] source citations and zero-hallucination guardrails. Syncs project data and pulls live GitHub READMEs to prevent documentation drift between repositories and the portfolio.",
+            ]),
+        ]);
+
+        // Project 5: Alaala Collections (Demoted to non-featured / text mention)
+        Project::create([
+            'title' => 'Alaala Collections',
+            'slug' => 'alaala-collections',
+            'summary' => 'Production MERN event management and client reservation platform with Cloudinary galleries, review moderation, and a JWT admin dashboard.',
+            'description' => "Alaala Collections is a production full-stack MERN event management platform built for a freelance events business client. Clients browse services, submit reservations, view Cloudinary galleries, and submit reviews, while administrators manage bookings and content through JWT-protected dashboard routes.",
+            'highlights' => [
+                'End-to-end client event reservation workflow and admin booking management.',
+                'JWT-protected admin dashboard for services, galleries, reservations, and review moderation.',
+                'Cloudinary media pipeline for event galleries, deployed to production at alaalacollections.site.',
+            ],
+            'tags' => [
+                'React', 'Node.js', 'Express', 'MongoDB', 'Tailwind CSS', 'JWT', 'Cloudinary',
             ],
             'url' => 'https://alaalacollections.site',
             'github_url' => 'https://github.com/jvecinadev/event-management-platform-case-study',
@@ -108,138 +155,96 @@ class DatabaseSeeder extends Seeder
             'images' => [
                 'https://res.cloudinary.com/dn8e584nq/image/upload/v1787956838/alaala_cover.png',
             ],
-            'featured' => true,
-            'body' => implode("\n\n", [
-                "Overview & Problem: Alaala Collections (live at https://alaalacollections.site, case study repo at https://github.com/jvecinadev/event-management-platform-case-study) is a production full-stack MERN event management platform built by John Francis Vecina to modernize client booking, service discovery, and daily operations for an events business.",
-                "Client Booking & Gallery Experience: Prospective clients can browse event packages, submit reservations with event dates and details, explore high-resolution event galleries hosted on Cloudinary, and read or submit customer reviews.",
-                "Admin Dashboard & Moderation: Administrators log in through JWT-protected dashboard routes to manage service listings, process and approve client reservations, upload gallery media, and moderate customer reviews before they go live.",
-                "Tech Stack: Built with React, Vite, Tailwind CSS, React Router, and Axios on the frontend, and Node.js, Express, MongoDB, Mongoose, JWT authentication, and Cloudinary on the backend.",
-            ]),
-        ]);
-
-        // 4. Vouch
-        Project::create([
-            'title' => 'Vouch — Local AI Security Reviewer for Git Diffs',
-            'slug' => 'vouch',
-            'summary' => 'Local, privacy-first security reviewer for git diffs combining static analysis (Bandit & Semgrep) with local AI triage and verified fix suggestions.',
-            'description' => "Vouch is a local, privacy-first security reviewer for git diffs. It scans code changes with Bandit and Semgrep, detects removed security safeguards, triages findings using a local AI model, and suggests fixes that are automatically verified.",
-            'highlights' => [
-                'Privacy-first local security review pipeline that analyzes git diffs before code leaves the developer machine.',
-                'Combines deterministic static analysis scanners (Bandit and Semgrep) with local AI model triage to reduce false positives.',
-                'Detects removed security safeguards (such as deleted auth middleware or weakened validation checks) in diffs.',
-                'Generates candidate code fixes and automatically re-verifies them against the scanners.',
-            ],
-            'tags' => [
-                'Python', 'AI Tooling', 'Static Analysis', 'Bandit', 'Semgrep', 'Git', 'Security', 'Local LLM',
-            ],
-            'url' => 'https://github.com/jvecinadev/vouch',
-            'github_url' => 'https://github.com/jvecinadev/vouch',
-            'live_url' => null,
-            'images' => [
-                'https://res.cloudinary.com/dn8e584nq/image/upload/v1794394708/Vouch_Secure_Code_Review_Poster.png'
-            ],
             'featured' => false,
             'body' => implode("\n\n", [
-                "Project Overview: Vouch (repo at https://github.com/jvecinadev/vouch) is an AI-integrated developer security tool built in Python by John Francis Vecina. It acts as a local, privacy-first security reviewer for git diffs.",
-                "How Vouch Works: When reviewing a git diff, Vouch runs static analysis with Bandit and Semgrep, specifically watching for newly introduced vulnerabilities as well as removed safeguards in existing code. It then uses a local AI model to triage findings, explain the risk, and propose code fixes that are automatically re-verified by the scanners.",
-            ]),
-        ]);
-
-        // 5. jvecina.dev (RAG Portfolio & Predecessor)
-        Project::create([
-            'title' => 'jvecina.dev — AI RAG Developer Portfolio',
-            'slug' => 'jvecina-dev',
-            'summary' => 'Personal portfolio and citation-backed AI RAG agent built with Laravel 13, React, TypeScript, PostgreSQL pgvector, and Google Gemini.',
-            'description' => "Full-stack developer & AI engineer portfolio for John Francis Vecina. Features a Retrieval-Augmented Generation (RAG) chat agent grounded over real project case studies, skills, and engineering architecture using PostgreSQL pgvector and Google Gemini.",
-            'highlights' => [
-                'End-to-end RAG pipeline in Laravel 13 + PHP 8.4 using raw HTTP calls to Google Gemini (gemini-embedding-001 & Gemini Flash).',
-                'Paragraph-aware chunking (~400 tokens with 50-token overlap) stored in PostgreSQL 16 with 768-dimensional pgvector embeddings.',
-                'Strict >0.50 cosine similarity threshold and deterministic fallback when retrieval returns 0 matching chunks to prevent hallucinations.',
-                'Every AI response cites numbered sources [1], [2] and logs latency, token counts, and user feedback in rag_logs.',
-            ],
-            'tags' => [
-                'Laravel', 'PHP', 'React', 'TypeScript', 'PostgreSQL', 'pgvector',
-                'Google Gemini', 'Embeddings', 'Vector Search', 'RAG Pipelines', 'Tailwind CSS', 'Vite', 'Docker',
-            ],
-            'url' => 'https://jvecina-dev.vercel.app/',
-            'github_url' => 'https://github.com/jvecinadev/jvecina.dev',
-            'live_url' => 'https://jvecina-dev.vercel.app/',
-            'images' => [],
-            'featured' => false,
-            'body' => implode("\n\n", [
-                "Overview: jvecina.dev (predecessor live at https://jvecina-dev.vercel.app/, repo at https://github.com/jvecinadev/jvecina.dev) is John Francis Vecina's portfolio site, upgraded with a Laravel 13 + PostgreSQL pgvector + Google Gemini RAG agent.",
-                "RAG Architecture: Portfolio content is split into paragraph-aware ~400-token chunks with 50-token overlap, prefixed with source titles, and embedded into 768-dimensional vectors using Google Gemini's embedding API. User questions are embedded and matched via pgvector cosine similarity (<=>) with a 0.50 floor, ensuring every answer cites its sources and refuses to hallucinate.",
+                "What It Is: Alaala Collections (live at https://alaalacollections.site, GitHub: https://github.com/jvecinadev/event-management-platform-case-study) is a production full-stack MERN event management platform built by John Francis Vecina for an events company.",
+                "Features & Stack: Built with React, Node.js, Express, MongoDB, JWT auth, and Cloudinary. Includes public service discovery, event reservation submission, photo galleries, customer reviews, and a protected admin dashboard for operations and content moderation.",
             ]),
         ]);
 
         // =====================================================================
-        // EXPERIENCES (Identity, Background, Skills Inventory & Positioning)
+        // 1, 2, 3, 4, 6: IDENTITY, BACKGROUND, EXPERIENCE, EDUCATION & TECH STACK
         // =====================================================================
+
+        // Core Identity, Contact, Education & Master Tech Stack
         Experience::create([
-            'title' => 'John Francis Vecina (jvecina.dev / jvecinadev) — Full-Stack & AI Engineer',
-            'slug' => 'john-francis-vecina-profile',
-            'summary' => 'Full-Stack & AI Engineer based in Manila, Philippines. Open to work for full-stack roles. Specializes in MERN + TypeScript, Prisma/MySQL, Laravel + PostgreSQL/pgvector, and RAG pipelines.',
+            'title' => 'John Francis Vecina — Full Stack Developer | Backend AI Engineer',
+            'slug' => 'john-francis-vecina-identity-and-skills',
+            'summary' => 'Full Stack Developer & Backend AI Engineer in the Philippines (UTC+8). IT Student at Pamantasan ng Lungsod ng Valenzuela. Open to work.',
             'tags' => [
-                'React', 'TypeScript', 'Node.js', 'Express', 'MongoDB', 'PostgreSQL',
-                'pgvector', 'Prisma', 'MySQL', 'Redis', 'Laravel', 'Google Gemini', 'RAG Pipelines',
+                'TypeScript', 'React 19', 'Node.js', 'Express 5', 'Python', 'FastAPI',
+                'PostgreSQL', 'pgvector', 'Prisma', 'MySQL', 'MongoDB', 'Redis', 'Docker',
             ],
-            'url' => 'https://jvecina-dev.vercel.app/',
+            'url' => 'https://jvecinadev-rag.vercel.app/',
             'body' => implode("\n\n", [
-                "Identity & Positioning: John Francis Vecina (handle: jvecina.dev / jvecinadev) is a Full-Stack & AI Engineer (Full-stack developer) based in Manila, Philippines. Status: Open to work for full-stack engineering roles.",
-                "Background: IT student and full-stack developer with hands-on experience building production-style web applications end to end—spanning responsive React/TypeScript UIs, validation-first REST APIs, relational and NoSQL database design, multi-tenant application architecture, AI/RAG pipelines, and cloud deployment.",
-                "Primary Stack: MERN + TypeScript (MongoDB, Express, React, Node.js, TypeScript), with recent production and capstone work spanning Prisma, MySQL, Redis, Laravel 13, PostgreSQL 16 with pgvector, and Google Gemini RAG systems.",
-                "Complete Technical Skills Inventory by Group:\n"
-                . "- Frontend: React, TypeScript, JavaScript, Tailwind CSS, Vite\n"
-                . "- Backend: Node.js, Express, Zod, JWT, httpOnly Cookies, REST APIs\n"
-                . "- Data & Caching: MongoDB, PostgreSQL, Redis, Prisma, MySQL, pgvector\n"
-                . "- Quality & Infrastructure: Jest, Supertest, Docker, GitHub Actions\n"
-                . "- Workflow: Git, GitHub, Postman, Figma\n"
-                . "- Deployment: Vercel, Render, MongoDB Atlas\n"
-                . "- AI / RAG (Differentiator): Laravel, Google Gemini, Embeddings, Vector Search, RAG Pipelines",
+                "Core Identity & Contact Information:\n"
+                . "- Full Name: John Francis Vecina (handle: jvecina.dev / jvecinadev)\n"
+                . "- Role / Title: Full Stack Developer | Backend AI Engineer\n"
+                . "- Location: Valenzuela / Manila, Philippines (UTC+8)\n"
+                . "- Status: Open to work (Full-Stack & Backend AI Engineering roles)\n"
+                . "- Email: johnvecina640@gmail.com\n"
+                . "- GitHub: https://github.com/jvecinadev\n"
+                . "- LinkedIn: https://www.linkedin.com/in/john-francis-vecina-a76aa63b9/\n"
+                . "- Portfolio: https://jvecinadev-rag.vercel.app/",
+
+                "Background & Education:\n"
+                . "John Francis Vecina is an Information Technology student at Pamantasan ng Lungsod ng Valenzuela (PLV) focusing on Web Development and backend systems engineering. He is driven by building production-grade software end to end—from responsive React 19 + TypeScript interfaces to validation-first APIs, multi-tenant relational/NoSQL databases, and grounded AI/RAG pipelines that solve real operational problems.",
+
+                "Master Tech Stack Inventory:\n"
+                . "- Frontend & State: TypeScript, JavaScript, React 19, TanStack Query, Zustand, Tailwind CSS, Vite\n"
+                . "- Backend & Validation: Node.js, Express 5, Python, FastAPI, Laravel, Zod, Pydantic, JWT, httpOnly Cookies, REST APIs\n"
+                . "- Data, ORM & Vectors: Prisma, PostgreSQL, pgvector, MySQL, MongoDB, Redis, SQL\n"
+                . "- AI, Testing & Workflow: Google Gemini, Claude, OpenAI, DeepSeek, Ollama, Gradio, Jest, Supertest, pytest, Bandit, Semgrep, tree-sitter, Docker, GitHub Actions, Postman, Thunder Client, Git, Linux, Vercel, Render, VS Code, Figma",
             ]),
         ]);
 
+        // Work Experience 1: FlyRank AI
         Experience::create([
-            'title' => 'Full-Stack Software Engineering & Production Case Studies',
-            'slug' => 'fullstack-engineering-experience',
-            'summary' => 'Built and deployed Plinth (multi-tenant SaaS), Bantay PH (LGU governance platform), Alaala Collections (live events platform), and Vouch (AI git diff security reviewer).',
+            'title' => 'Backend AI Engineer - Intern | FlyRank AI (Remote, Aug 2026 – Present)',
+            'slug' => 'backend-ai-engineer-intern-flyrank-ai',
+            'summary' => 'Building and maintaining backend AI services, LLM/RAG workflows, and data pipelines using Python, FastAPI, Node.js, and PostgreSQL/pgvector.',
             'tags' => [
-                'Multi-Tenancy', 'RBAC', 'Zod', 'Jest', 'Supertest', 'Docker', 'GitHub Actions', 'Cloudinary',
+                'Python', 'FastAPI', 'Node.js', 'PostgreSQL', 'pgvector', 'Gemini', 'OpenAI', 'Claude', 'DeepSeek', 'Pydantic', 'Docker',
             ],
-            'url' => 'https://github.com/jvecinadev',
+            'url' => 'https://www.linkedin.com/in/john-francis-vecina-a76aa63b9/',
             'body' => implode("\n\n", [
-                "Production & Capstone Engineering: Designed, tested, and shipped multiple end-to-end applications solving real operational problems: Alaala Collections (live event management platform at alaalacollections.site), Plinth (workspace-scoped multi-tenant SaaS with Redis caching and Jest/Supertest integration tests), Bantay PH (barangay issue-reporting system with database-driven RBAC and Prisma/MySQL state machines), and Vouch (Python + local AI security reviewer for git diffs).",
-                "Engineering Discipline: Emphasizes layered backend architecture (routes, controllers, services, models, validation), strict tenant isolation, transactional database integrity, and automated CI testing with Docker and GitHub Actions.",
+                "Role: Backend AI Engineer - Intern at FlyRank AI (Remote) | August 2026 – Present.",
+                "What I Build & Maintain: Engineering backend AI microservices, Retrieval-Augmented Generation (RAG) pipelines, vector search workflows, and structured LLM integrations (leveraging Gemini, Claude, OpenAI, and DeepSeek APIs) with strict schema validation and low-latency API design.",
+                "Stack Used at FlyRank AI: Python, FastAPI, Pydantic, Node.js, PostgreSQL, pgvector, Redis, Docker, and Git.",
+            ]),
+        ]);
+
+        // Work Experience 2: Freelance Software Developer
+        Experience::create([
+            'title' => 'Freelance Software Developer | Self-Employed (Valenzuela, PH, Aug 2025 – Present)',
+            'slug' => 'freelance-software-developer-valenzuela',
+            'summary' => 'Designed, built, and deployed custom full-stack web applications and booking platforms for clients using MERN, TypeScript, Prisma, and SQL/NoSQL databases.',
+            'tags' => [
+                'React 19', 'TypeScript', 'Node.js', 'Express 5', 'MongoDB', 'MySQL', 'Prisma', 'Zod', 'Tailwind CSS', 'Vercel', 'Render',
+            ],
+            'url' => 'https://alaalacollections.site',
+            'body' => implode("\n\n", [
+                "Role: Freelance Software Developer (Self-Employed, Valenzuela, Philippines) | August 2025 – Present.",
+                "What I Built for Clients: Delivered production end-to-end web platforms and business operations systems—most notably Alaala Collections (https://alaalacollections.site), a full-stack event management and client reservation platform featuring service catalogs, booking workflows, Cloudinary galleries, review moderation, and a JWT-protected admin dashboard.",
+                "Primary Stack Used: React, TypeScript, Tailwind CSS, TanStack Query, Node.js, Express, Zod, MongoDB, MySQL, Prisma, Cloudinary, Vercel, and Render.",
             ]),
         ]);
 
         // =====================================================================
-        // POSTS (Engineering Themes: "How I Build" Story)
+        // ENGINEERING THEMES POST ("How I Build")
         // =====================================================================
         Post::create([
-            'title' => 'How I Build: Auth Flows, Validation-First APIs, Tenant Isolation & Testing',
-            'slug' => 'how-i-build-engineering-themes',
-            'summary' => 'The core engineering themes across my projects: httpOnly cookie JWT auth, Zod validation, database-driven RBAC, Jest/Supertest integration testing, and Docker CI.',
-            'tags' => ['Architecture', 'JWT', 'Zod', 'RBAC', 'Multi-Tenancy', 'Jest', 'Supertest', 'Docker'],
+            'title' => 'How I Build: Tenant Isolation, Per-Request RBAC, Validation-First APIs & Local AI Verification',
+            'slug' => 'how-i-build-engineering-principles',
+            'summary' => 'Architectural patterns across Plinth, Bantay PH, Vouch, and jvecina.dev: DB-level tenant isolation, transactional state machines, Zod/Pydantic validation, and grounded RAG.',
+            'tags' => ['Architecture', 'RBAC', 'Multi-Tenancy', 'Zod', 'Prisma', 'Jest', 'Supertest', 'RAG'],
             'url' => 'https://github.com/jvecinadev',
             'body' => implode("\n\n", [
-                "John Francis Vecina's core engineering philosophy ('How I Build') centers on five recurring themes applied across Plinth, Bantay PH, and Alaala Collections:",
-                "1. Auth Flows — JWT via httpOnly Cookies & Protected Routes: Instead of storing sensitive tokens in localStorage where XSS scripts can read them, authentication flows issue JWTs inside secure httpOnly cookies paired with strict route-protection middleware on both the API and React frontend.",
-                "2. Validation-First APIs — Zod Schemas & Consistent Error Responses: Every mutating API route validates request bodies, query parameters, and route params against strict Zod schemas before any controller or service logic executes, returning predictable, structured validation error responses.",
-                "3. Tenant Isolation & Database-Driven RBAC: In multi-tenant and civic apps like Plinth and Bantay PH, access control goes beyond simple admin booleans. Plinth scopes every query to the active workspace across owner, admin, member, and viewer roles, while Bantay PH resolves role-to-permission mappings dynamically from the database on every request.",
-                "4. Testing Mindset & Deployment-Ready Infrastructure: Where reliability and security boundaries matter—such as cross-workspace tenant isolation and soft deletes in Plinth—integration test suites using Jest and Supertest verify actual HTTP and database behavior inside Dockerized environments wired to GitHub Actions CI.",
-            ]),
-        ]);
-
-        Post::create([
-            'title' => 'Why I Built My Portfolio RAG Agent with Laravel, PostgreSQL pgvector, and Gemini',
-            'slug' => 'why-laravel-pgvector-gemini-rag',
-            'summary' => 'Keeping relational portfolio data and 768-dimensional vector embeddings in one PostgreSQL database with strict citation grounding.',
-            'tags' => ['Laravel', 'PostgreSQL', 'pgvector', 'Google Gemini', 'RAG Pipelines', 'Vector Search'],
-            'url' => '/work/jvecina-dev',
-            'body' => implode("\n\n", [
-                "As a Full-Stack & AI Engineer strong in MERN and TypeScript, building this RAG portfolio backend in Laravel 13 and PostgreSQL 16 with pgvector demonstrated cross-stack versatility while keeping vector search and relational data unified in a single database.",
-                "Each project, experience entry, and engineering post is chunked into ~400-token segments with 50-token overlap, prefixed with its source title, and embedded via Google Gemini's embedding model. At query time, cosine similarity search retrieves the top 5 chunks above 0.50 similarity and requires the model to cite [1], [2] inline or say 'I don't know' when asked out-of-scope questions.",
+                "John Francis Vecina's engineering philosophy focuses on verifiable backend guarantees rather than happy-path demos:",
+                "1. Tenant Isolation & Per-Request RBAC: In Plinth, tenant isolation is enforced at the database query level alongside 4-tier RBAC on every mutating route. In Bantay PH, permissions are resolved from MySQL per request so role updates take effect immediately without stale JWT claims.",
+                "2. Validation-First APIs & Transactional State Machines: Inputs are validated at the boundary using Zod (Node/Express) or Pydantic (Python/FastAPI). Multi-step workflows like Bantay PH's civic report pipeline use transactional database state machines with complete audit trails to eliminate race conditions.",
+                "3. Automated Verification & Testing: Critical security and tenancy boundaries are backed by Jest + Supertest integration tests (Plinth) and pytest + automated patch verification loops (`apply → parse → confirm` in Vouch).",
+                "4. Grounded AI Systems: Both Vouch (local Ollama triage + SARIF static analysis) and jvecina.dev (PostgreSQL pgvector + Gemini embeddings RAG) treat LLMs as bounded components verified by deterministic checks, similarity thresholds, and explicit source citations.",
             ]),
         ]);
     }
