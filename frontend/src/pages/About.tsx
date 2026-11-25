@@ -276,7 +276,7 @@ function GitHubActivityCard() {
       if (day.count > peakCount) peakCount = day.count;
 
       const dateObj = new Date(`${day.date}T00:00:00Z`);
-      const dayOfWeek = dateObj.getUTCDay(); // 0 (Sun) - 6 (Sat)
+      const dayOfWeek = dateObj.getUTCDay();
 
       currentWeek[dayOfWeek] = day;
 
@@ -366,7 +366,7 @@ function GitHubActivityCard() {
                 {Array.from({ length: 7 }).map((__, dayIdx) => (
                   <div
                     key={dayIdx}
-                    className="h-3 w-3 rounded-xs bg-ink animate-pulse"
+                    className="h-3 w-3 rounded-[2px] bg-ink animate-pulse"
                   />
                 ))}
               </div>
@@ -389,7 +389,7 @@ function GitHubActivityCard() {
         </div>
       ) : (
         <div className="overflow-x-auto pb-1">
-          <div className="min-w-170 space-y-1.5">
+          <div className="min-w-[680px] space-y-1.5">
             {/* Month Labels */}
             <div
               className="grid gap-1 font-mono text-[10px] text-textFaint"
@@ -427,14 +427,14 @@ function GitHubActivityCard() {
                         aria-label={`${day.count} contributions on ${formatContributionDate(
                           day.date
                         )}`}
-                        className={`aspect-square w-full min-h-2.75 min-w-2.75 rounded-xs border transition-transform duration-100 hover:scale-125 focus:scale-125 focus:outline-none ${levelClassName(
+                        className={`aspect-square w-full min-h-[11px] min-w-[11px] rounded-[2px] border transition-transform duration-100 hover:scale-125 focus:scale-125 focus:outline-none ${levelClassName(
                           day.level
                         )}`}
                       />
                     ) : (
                       <span
                         key={`empty-${weekIdx}-${dayIdx}`}
-                        className="aspect-square w-full min-h-2.75 min-w-2.75 rounded-xs bg-transparent"
+                        className="aspect-square w-full min-h-[11px] min-w-[11px] rounded-[2px] bg-transparent"
                       />
                     )
                   )}
@@ -455,7 +455,7 @@ function GitHubActivityCard() {
             <span
               key={lvl}
               aria-hidden="true"
-              className={`h-3 w-3 rounded-xs border ${levelClassName(lvl)}`}
+              className={`h-3 w-3 rounded-[2px] border ${levelClassName(lvl)}`}
             />
           ))}
           <span>More</span>
@@ -600,6 +600,12 @@ export default function About() {
                 <dd className="text-text text-right">BSIT, PLV</dd>
               </div>
               <div className="flex items-center justify-between gap-4 py-3">
+                <dt className="font-mono text-xs text-textFaint">Recognition</dt>
+                <dd className="text-accent font-mono text-xs text-right">
+                  CEISSAFP Top 10 Finalist
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-4 py-3">
                 <dt className="font-mono text-xs text-textFaint">Email</dt>
                 <dd className="text-right">
                   <a
@@ -652,22 +658,22 @@ export default function About() {
         </aside>
       </section>
 
-      {/* 2. EXPERIENCE & EDUCATION */}
+      {/* 2. EXPERIENCE, EDUCATION & HONORS */}
       <section className="border-t border-border pt-14 sm:pt-16 space-y-8">
         <div className="max-w-[64ch] space-y-2">
           <SectionLabel label="EXPERIENCE & EDUCATION" />
           <h2 className="font-sans text-2xl font-semibold tracking-tight text-text sm:text-3xl">
-            Professional background and academic foundation.
+            Professional background, academics, and competitions.
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          {/* Experience Column (8 cols) */}
-          <div className="lg:col-span-8 space-y-4">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-stretch">
+          {/* Experience Column (7 cols) */}
+          <div className="lg:col-span-7 flex flex-col justify-between gap-5">
             {EXPERIENCE_TIMELINE.map((item) => (
               <article
                 key={item.role + item.organization}
-                className="rounded-lg border border-border bg-surface p-5 sm:p-6 space-y-4"
+                className="flex-1 rounded-lg border border-border bg-surface p-5 sm:p-6 space-y-4"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
@@ -728,60 +734,90 @@ export default function About() {
                 ))}
           </div>
 
-          {/* Education & Availability Column (4 cols) */}
-          <div className="lg:col-span-4 flex flex-col justify-between gap-6">
-            <div className="rounded-lg border border-border bg-surface p-5 sm:p-6 space-y-4">
-              <div className="space-y-1">
-                <p className="font-mono text-xs uppercase tracking-wider text-accent">
-                  Education
-                </p>
-                <h3 className="font-sans text-lg font-semibold text-text">
-                  Pamantasan ng Lungsod ng Valenzuela
-                </h3>
-                <p className="font-mono text-xs text-textMuted">
-                  Present · Valenzuela, PH
-                </p>
+          {/* Education, Honors & Availability Column (5 cols) */}
+          <div className="lg:col-span-5 flex flex-col justify-between gap-5">
+            {/* Education Card */}
+            <div className="rounded-lg border border-border bg-surface p-5 sm:p-6 space-y-3.5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="space-y-1">
+                  <p className="font-mono text-xs uppercase tracking-wider text-accent">
+                    Education
+                  </p>
+                  <h3 className="font-sans text-base font-semibold text-text sm:text-lg">
+                    Pamantasan ng Lungsod ng Valenzuela
+                  </h3>
+                </div>
+                <span className="shrink-0 rounded border border-border bg-ink px-2 py-0.5 font-mono text-[11px] text-textMuted">
+                  Present
+                </span>
               </div>
 
-              <div className="border-t border-border pt-3.5 space-y-2">
+              <div className="border-t border-border pt-3 space-y-1.5">
                 <p className="font-sans text-sm font-medium text-text">
-                  Bachelor of Science in Information Technology
+                  BS in Information Technology
                 </p>
                 <p className="font-sans text-xs leading-relaxed text-textMuted">
-                  Specialization in Web Development, relational database design,
-                  software engineering, and full-stack application architecture.
+                  Focus on Web Development, relational database systems, and
+                  full-stack software engineering.
                 </p>
               </div>
             </div>
 
-            <div className="rounded-lg border border-border bg-surface p-5 sm:p-6 space-y-4">
-              <div className="space-y-1">
-                <p className="font-mono text-xs uppercase tracking-wider text-accent">
-                  For Recruiters &amp; Clients
-                </p>
-                <h3 className="font-sans text-base font-semibold text-text">
-                  What I am open to right now
-                </h3>
+            {/* Honors & Hackathons Card */}
+            <div className="rounded-lg border border-border bg-surface p-5 sm:p-6 space-y-3.5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="space-y-1">
+                  <p className="font-mono text-xs uppercase tracking-wider text-accent">
+                    Honors &amp; Competitions
+                  </p>
+                  <h3 className="font-sans text-base font-semibold text-text">
+                    CEISSAFP Ideathon · Top 10 Finalist
+                  </h3>
+                </div>
+                <span className="shrink-0 rounded border border-accent/40 bg-accent/10 px-2 py-0.5 font-mono text-[11px] text-accent">
+                  Finalist
+                </span>
               </div>
 
-              <ul className="space-y-2 border-t border-border pt-3.5 font-sans text-xs sm:text-sm text-textMuted">
+              <ul className="space-y-2 border-t border-border pt-3 font-sans text-xs leading-relaxed text-textMuted">
                 <li className="flex items-start gap-2">
-                  <span className="font-mono text-accent">•</span>
-                  <span>Full-Stack or Backend Engineer roles</span>
+                  <span className="font-mono text-accent">→</span>
+                  <span>
+                    Recognized as a <strong className="text-text font-medium">Top 10 Finalist</strong> at the CEISSAFP Ideathon for scoping and pitching a high-impact technical solution.
+                  </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="font-mono text-accent">•</span>
-                  <span>AI / RAG Backend engineering roles</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-mono text-accent">•</span>
-                  <span>Remote or Philippines-based teams</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-mono text-accent">•</span>
-                  <span>Select freelance web and AI builds</span>
+                  <span className="font-mono text-accent">→</span>
+                  <span>
+                    <strong className="text-text font-medium">4x Hackathon &amp; Ideathon Participant</strong>, building working prototypes and system architectures under tight competition deadlines.
+                  </span>
                 </li>
               </ul>
+            </div>
+
+            {/* Availability Card */}
+            <div className="rounded-lg border border-border bg-surface p-5 sm:p-6 space-y-3">
+              <p className="font-mono text-xs uppercase tracking-wider text-accent">
+                For Recruiters &amp; Clients
+              </p>
+              <div className="grid grid-cols-1 gap-2 border-t border-border pt-3 font-sans text-xs text-textMuted sm:grid-cols-2">
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                  <span>Full-Stack / Backend Roles</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                  <span>AI / RAG Engineering</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                  <span>Remote or PH-Based</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                  <span>Freelance Client Builds</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
